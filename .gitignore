@@ -1,7 +1,11 @@
+Release/
+.settings/
+.launches/
+secretkeys.h
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
-
 # Folder config file
 Desktop.ini
 
