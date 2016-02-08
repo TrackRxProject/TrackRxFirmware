@@ -58,6 +58,8 @@
 
 #include "trackrxfirmware.h"
 
+//#include "flash.h"
+
 #define APPLICATION_VERSION     "1.1.1"
 
 //*****************************************************************************
@@ -191,6 +193,7 @@ void LEDSleepyBlinkyRoutine()
 
 }
 
+
 int main()
 {
     BoardInit();
@@ -201,6 +204,9 @@ int main()
     PinMuxConfig();
     GPIO_IF_LedConfigure(LED1|LED2|LED3);
     GPIO_IF_LedOff(MCU_ALL_LED_IND);
+
+    writeInterval_flash(250);
+    int interval = readInterval_flash();
 
     LEDSleepyBlinkyRoutine();
 

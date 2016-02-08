@@ -9,7 +9,7 @@
 #define TRACKRXFIRMWARE_H_
 
 int httpDemo();
-
-
+unsigned char * intToCharArray (int integer, int length, unsigned char * charArray);
+int charArrayToInt(unsigned char * charArray, int length);
 
 #endif /* TRACKRXFIRMWARE_H_ */

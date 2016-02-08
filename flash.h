@@ -10,7 +10,6 @@
 
 #define SL_MAX_FILE_SIZE        64L*1024L       /* 64KB file */
 #define BUF_SIZE                2048
-#define USER_FILE_NAME          "fs_demo.txt"
 
 /* Application specific status/error codes */
 typedef enum{
@@ -26,9 +25,17 @@ typedef enum{
     STATUS_CODE_MAX = -0xBB8
 }e_AppStatusCodes;
 
-int writeInterval_flash(float interval);
-float readInterval_flash();
-static long WriteFileToDevice(unsigned long *ulToken, long *lFileHandle, unsigned char * fileName);
+long writeInterval_flash(int interval);
+static long writeFileToDevice(unsigned char * fileName,
+								unsigned int offset,
+								unsigned char * writeBuff,
+								int length);
+int readInterval_flash();
+static long readFileFromDevice(unsigned char * fileName,
+								unsigned int offset,
+								unsigned char * readBuff,
+								int length);
+
 
 
 #endif /* FLASH_H_ */
