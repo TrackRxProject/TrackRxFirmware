@@ -38,11 +38,15 @@
 // Standard includes
 #include <stdio.h>
 
+#include "device.h"
+
 // Driverlib includes
 #include "hw_types.h"
 #include "hw_ints.h"
 #include "hw_memmap.h"
+#include "hw_hib1p2.h"
 #include "hw_common_reg.h"
+#include "timer.h"
 #include "interrupt.h"
 #include "hw_apps_rcm.h"
 #include "prcm.h"
@@ -55,10 +59,13 @@
 // Common interface includes
 #include "gpio_if.h"
 #include "pinmux.h"
+#include "common.h"
+#include "utils_if.h"
+#include "timer_if.h"
 
 #include "trackrxfirmware.h"
 
-//#include "flash.h"
+#include "flash.h"
 
 #define APPLICATION_VERSION     "1.1.1"
 
@@ -157,8 +164,9 @@ void sleepUntilNextDose()
 {
 	float hours = 0.0083333; //TODO: Get this from the server or something
 	unsigned long long ticks = 3600*3278*hours;
-	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR);
 	PRCMHibernateIntervalSet(ticks);
+	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR);
+	sl_Stop(NULL);
 	PRCMHibernateEnter();
 }
 
@@ -204,9 +212,10 @@ int main()
     PinMuxConfig();
     GPIO_IF_LedConfigure(LED1|LED2|LED3);
     GPIO_IF_LedOff(MCU_ALL_LED_IND);
+    sl_Start(NULL, NULL, NULL); //TODO: check error
 
-    writeInterval_flash(250);
-    int interval = readInterval_flash();
+    //writeInterval_flash(readInterval_flash()+1);
+    //int interval = readInterval_flash();
 
     LEDSleepyBlinkyRoutine();
 
