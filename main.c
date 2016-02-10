@@ -166,7 +166,7 @@ void sleepUntilNextDose()
 	unsigned long long ticks = 3600*3278*hours;
 	PRCMHibernateIntervalSet(ticks);
 	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR);
-	sl_Stop(NULL);
+	//sl_Stop(NULL);
 	PRCMHibernateEnter();
 }
 
@@ -212,7 +212,7 @@ int main()
     PinMuxConfig();
     GPIO_IF_LedConfigure(LED1|LED2|LED3);
     GPIO_IF_LedOff(MCU_ALL_LED_IND);
-    sl_Start(NULL, NULL, NULL); //TODO: check error
+    //sl_Start(NULL, NULL, NULL); //TODO: check error
 
     //writeInterval_flash(readInterval_flash()+1);
     //int interval = readInterval_flash();

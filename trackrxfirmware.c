@@ -19,11 +19,10 @@ static int pow10(int power)
 
 unsigned char * intToCharArray (int integer, int length, unsigned char * charArray)
 {
-	int i;
-	for(i = 0; i < length; i++)
+	length--;
+	for(; length >= 0; length--)
 	{
-		int temp = integer % 10;
-		charArray[i] = temp;//integer % 10;
+		charArray[length] = integer % 10;
 		integer /= 10;
 	}
 	return charArray;
@@ -32,12 +31,10 @@ unsigned char * intToCharArray (int integer, int length, unsigned char * charArr
 int charArrayToInt(unsigned char * charArray, int length)
 {
 	int integer = 0;
-	length--;
-	for(; length >= 0; length--)
+	int i;
+	for(i=0; i < length; i++)
 	{
-		int temp = charArray[length];
-		temp *= pow10(length);
-		integer += temp;//charArray[length] * pow10(length);
+		integer += charArray[i] * pow10(length-i-1);
 	}
 	return integer;
 }

@@ -71,12 +71,13 @@
 #include "jsmn.h"
 
 #include "secretkeys.h"
+#include "trackrxfirmware.h"
 
 #define APPLICATION_VERSION "1.1.1"
 #define APP_NAME            "HTTP Client"
 
-#define POST_REQUEST_URI 	"/post"
-#define POST_DATA           "{\n\"name\":\"xyz\",\n\"address\":\n{\n\"plot#\":12,\n\"street\":\"abc\",\n\"city\":\"ijk\"\n},\n\"age\":30\n}"
+#define POST_ACTIVATION_URI 	"/activate/"
+#define POST_DATA           "a151f962-36f6-41ca-a653-10c65b6c39c5"
 
 #define DELETE_REQUEST_URI 	"/delete"
 
@@ -637,62 +638,6 @@ static int FlushHTTPResponse(HTTPCli_Handle httpClient)
     return 0;
 }
 
-
-//*****************************************************************************
-//
-//! \brief Handler for parsing JSON data
-//!
-//! \param[in]  ptr - Pointer to http response body data
-//!
-//! \return 0 on success else error code on failure
-//!
-//*****************************************************************************
-int ParseJSONData(char *ptr)
-{
-	long lRetVal = 0;
-    int noOfToken;
-    jsmn_parser parser;
-    jsmntok_t   *tokenList;
-
-
-    /* Initialize JSON PArser */
-    jsmn_init(&parser);
-
-    /* Get number of JSON token in stream as we we dont know how many tokens need to pass */
-    noOfToken = jsmn_parse(&parser, (const char *)ptr, strlen((const char *)ptr), NULL, 10);
-    if(noOfToken <= 0)
-    {
-    	UART_PRINT("Failed to initialize JSON parser\n\r");
-    	return -1;
-
-    }
-
-    /* Allocate memory to store token */
-    tokenList = (jsmntok_t *) malloc(noOfToken*sizeof(jsmntok_t));
-    if(tokenList == NULL)
-    {
-        UART_PRINT("Failed to allocate memory\n\r");
-        return -1;
-    }
-
-    /* Initialize JSON Parser again */
-    jsmn_init(&parser);
-    noOfToken = jsmn_parse(&parser, (const char *)ptr, strlen((const char *)ptr), tokenList, noOfToken);
-    if(noOfToken < 0)
-    {
-    	UART_PRINT("Failed to parse JSON tokens\n\r");
-    	lRetVal = noOfToken;
-    }
-    else
-    {
-    	UART_PRINT("Successfully parsed %ld JSON tokens\n\r", noOfToken);
-    }
-
-    free(tokenList);
-
-    return lRetVal;
-}
-
 /*!
     \brief This function read respose from server and dump on console
 
@@ -832,7 +777,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 			if(json)
 			{
 				/* Parse JSON data */
-				lRetVal = ParseJSONData(dataBuffer);
+				//lRetVal = ParseJSONData(dataBuffer);
 				if(lRetVal < 0)
 				{
 					goto end;
@@ -916,7 +861,65 @@ static int HTTPPostMethod(HTTPCli_Handle httpClient)
        Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_REQUEST_URI, moreFlags);
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_ACTIVATION_URI, moreFlags);
+    if(lRetVal < 0)
+    {
+        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        return lRetVal;
+    }
+
+    sprintf((char *)tmpBuf, "%d", (sizeof(POST_DATA)-1));
+
+    /* Here we are setting lastFlag = 1 as it is last header field.
+       Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
+    */
+    lastFlag = 1;
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
+    if(lRetVal < 0)
+    {
+        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        return lRetVal;
+    }
+
+
+    /* Send POST data/body */
+    lRetVal = HTTPCli_sendRequestBody(httpClient, POST_DATA, (sizeof(POST_DATA)-1));
+    if(lRetVal < 0)
+    {
+        UART_PRINT("Failed to send HTTP POST request body.\n\r");
+        return lRetVal;
+    }
+
+
+    lRetVal = readResponse(httpClient);
+
+    return lRetVal;
+}
+
+static int postActivationToHTTP(HTTPCli_Handle httpClient)
+{
+    bool moreFlags = 1;
+    bool lastFlag = 1;
+    char tmpBuf[4];
+    long lRetVal = 0;
+    HTTPCli_Field fields[4] = {
+                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
+                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
+                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/plain"},
+                                {NULL, NULL}
+                            };
+
+
+    /* Set request header fields to be send for HTTP request. */
+    HTTPCli_setRequestFields(httpClient, fields);
+
+    /* Send POST method request. */
+    /* Here we are setting moreFlags = 1 as there are some more header fields need to send
+       other than setted in previous call HTTPCli_setRequestFields() at later stage.
+       Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
+    */
+    moreFlags = 1;
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_ACTIVATION_URI, moreFlags);
     if(lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request header.\n\r");
@@ -1047,7 +1050,6 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, GET_REQUEST_URI, 0);
     if (lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP 1.1 GET request.\n\r");
         return 	-1; //TODO: implement error code
     }
 
@@ -1057,7 +1059,6 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_getResponseStatus(httpClient);
     if (lRetVal != 200)
     {
-        UART_PRINT("HTTP Status Code: %d\r\n", lRetVal);
         FlushHTTPResponse(httpClient);
         return -2; //TODO: implement error code
     }
@@ -1070,18 +1071,6 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
     while ((id = HTTPCli_getResponseField(httpClient, acRecvbuff, sizeof(acRecvbuff), &moreFlag))
             != HTTPCli_FIELD_ID_END)
     {
-
-        if(id == 0) // HTTPCli_FIELD_NAME_CONNECTION
-        {
-            if(!strncmp(acRecvbuff, "close", sizeof("close")))
-            {
-                UART_PRINT("Connection terminated by server.\n\r");
-            }
-        }
-        else if(id == 1) // HTTPCli_FIELD_NAME_CONTENT_TYPE
-        {
-            UART_PRINT("Content Type: %s\r\n", acRecvbuff);
-        }
     }
 
     HTTPCli_setResponseFields(httpClient, (const char **)prevRespFilelds);
@@ -1089,36 +1078,20 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
     //
     // Read body
     //
-    /*
-    while (1)
-    {
-        len = HTTPCli_readRawResponseBody(httpClient, acRecvbuff, sizeof(acRecvbuff) - 1);
-        if(len < 0)
-        {
-            return -1; // TODO: implement error codes
-        }
-        acRecvbuff[len] = 0;
 
-        if ((len - 2) >= 0 && acRecvbuff[len - 2] == '\r'
-                && acRecvbuff [len - 1] == '\n')
-        {
-            break;
-        }
-        if(!moreFlag)
-            break;
-
-    }
-    */
     int read = 1;
     while (read != 0)
     {
     	read = HTTPCli_readRawResponseBody(httpClient, acRecvbuff, sizeof(acRecvbuff)-1);
     	len += read;
     }
-
-
-    UART_PRINT("\n\r****************************** \n\r");
-    return 0; //TODO: Implement success code
+    acRecvbuff[2] = acRecvbuff[3];
+    acRecvbuff[3] = acRecvbuff[4];
+    int i;
+	for (i=0; i < 4; i++)
+		acRecvbuff[i] -= 48;
+    int interval = charArrayToInt((unsigned char *)acRecvbuff, 4);
+    return interval; //TODO: Implement success code
 }
 
 
@@ -1327,15 +1300,15 @@ int httpDemo()
         LOOP_FOREVER();
     }
 
-    /*UART_PRINT("\n\r");
+    UART_PRINT("\n\r");
     UART_PRINT("HTTP Post Begin:\n\r");
-    lRetVal = HTTPPostMethod(&httpClient);
+    lRetVal = postActivationToHTTP(&httpClient);
     if(lRetVal < 0)
     {
     	UART_PRINT("HTTP Post failed.\n\r");
     }
     UART_PRINT("HTTP Post End:\n\r");
-
+    /*
     UART_PRINT("\n\r");
     UART_PRINT("HTTP Delete Begin:\n\r");
     lRetVal = HTTPDeleteMethod(&httpClient);
