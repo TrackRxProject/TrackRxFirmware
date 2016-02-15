@@ -73,29 +73,26 @@
 #include "secretkeys.h"
 #include "trackrxfirmware.h"
 
-#define APPLICATION_VERSION "1.1.1"
-#define APP_NAME            "HTTP Client"
+#define APPLICATION_VERSION 	"1.1.1"
+#define APP_NAME            	"HTTP Client"
 
-#define POST_ACTIVATION_URI 	"/activate/"
-#define POST_DATA           "a151f962-36f6-41ca-a653-10c65b6c39c5"
+#define POST_ACTIVATION_URI 	"/prescription/"
+#define ACTIVATION_DATA			"1"
+#define ACTIVATION_END_URI		"/activate"
+#define POST_ADHERENCE_URI		"/adherence/"
 
-#define DELETE_REQUEST_URI 	"/delete"
-
-
-#define PUT_REQUEST_URI 	"/put"
-#define PUT_DATA            "PUT request."
-
-#define GET_REQUEST_URI 	"/prescription/1"
+#define INTERVAL_REQUEST_URI 	"/prescription/"
+#define INTERVAL_REQUEST_END	"/interval"
 
 
-#define HOST_NAME       	"trackrx.xyz" //"<host name>"
-#define HOST_PORT           8000
+#define HOST_NAME       		"trackrx.xyz"
+#define HOST_PORT           	8000
 
-#define PROXY_IP       	    <proxy_ip>
-#define PROXY_PORT          <proxy_port>
+#define PROXY_IP       	    	<proxy_ip>
+#define PROXY_PORT          	<proxy_port>
 
-#define READ_SIZE           1450
-#define MAX_BUFF_SIZE       1460
+#define READ_SIZE           	1450
+#define MAX_BUFF_SIZE       	1460
 
 
 // Application specific status/error codes
@@ -829,75 +826,15 @@ end:
     return lRetVal;
 }
 
-//*****************************************************************************
-//
-//! \brief HTTP POST Demonstration
-//!
-//! \param[in]  httpClient - Pointer to http client
-//!
-//! \return 0 on success else error code on failure
-//!
-//*****************************************************************************
-static int HTTPPostMethod(HTTPCli_Handle httpClient)
-{
-    bool moreFlags = 1;
-    bool lastFlag = 1;
-    char tmpBuf[4];
-    long lRetVal = 0;
-    HTTPCli_Field fields[4] = {
-                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
-                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "application/json"},
-                                {NULL, NULL}
-                            };
-
-
-    /* Set request header fields to be send for HTTP request. */
-    HTTPCli_setRequestFields(httpClient, fields);
-
-    /* Send POST method request. */
-    /* Here we are setting moreFlags = 1 as there are some more header fields need to send
-       other than setted in previous call HTTPCli_setRequestFields() at later stage.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
-    */
-    moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_ACTIVATION_URI, moreFlags);
-    if(lRetVal < 0)
-    {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
-        return lRetVal;
-    }
-
-    sprintf((char *)tmpBuf, "%d", (sizeof(POST_DATA)-1));
-
-    /* Here we are setting lastFlag = 1 as it is last header field.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
-    */
-    lastFlag = 1;
-    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
-    if(lRetVal < 0)
-    {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
-        return lRetVal;
-    }
-
-
-    /* Send POST data/body */
-    lRetVal = HTTPCli_sendRequestBody(httpClient, POST_DATA, (sizeof(POST_DATA)-1));
-    if(lRetVal < 0)
-    {
-        UART_PRINT("Failed to send HTTP POST request body.\n\r");
-        return lRetVal;
-    }
-
-
-    lRetVal = readResponse(httpClient);
-
-    return lRetVal;
-}
-
 static int postActivationToHTTP(HTTPCli_Handle httpClient)
 {
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char ACTIVATION_URI[24] = "";
+	strcat(ACTIVATION_URI, POST_ACTIVATION_URI);
+	strcat(ACTIVATION_URI, bottleUUID);
+	strcat(ACTIVATION_URI, ACTIVATION_END_URI);
+
     bool moreFlags = 1;
     bool lastFlag = 1;
     char tmpBuf[4];
@@ -919,14 +856,14 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
        Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_ACTIVATION_URI, moreFlags);
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, ACTIVATION_URI, moreFlags);
     if(lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
-    sprintf((char *)tmpBuf, "%d", (sizeof(POST_DATA)-1));
+    sprintf((char *)tmpBuf, "%d", (sizeof(ACTIVATION_DATA)-1));
 
     /* Here we are setting lastFlag = 1 as it is last header field.
        Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
@@ -941,7 +878,7 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
 
 
     /* Send POST data/body */
-    lRetVal = HTTPCli_sendRequestBody(httpClient, POST_DATA, (sizeof(POST_DATA)-1));
+    lRetVal = HTTPCli_sendRequestBody(httpClient, ACTIVATION_DATA, (sizeof(ACTIVATION_DATA)-1));
     if(lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request body.\n\r");
@@ -954,66 +891,64 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     return lRetVal;
 }
 
-//*****************************************************************************
-//
-//! \brief HTTP PUT Demonstration
-//!
-//! \param[in]  httpClient - Pointer to http client
-//!
-//! \return 0 on success else error code on failure
-//!
-//*****************************************************************************
-static int HTTPPutMethod(HTTPCli_Handle httpClient)
+static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherenceString)
 {
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char ADHERENCE_URI[47];
+	strcat(ADHERENCE_URI, POST_ADHERENCE_URI);
+	strcat(ADHERENCE_URI, bottleUUID);
 
+    bool moreFlags = 1;
+    bool lastFlag = 1;
+    char tmpBuf[4];
     long lRetVal = 0;
     HTTPCli_Field fields[4] = {
                                 {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
                                 {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/html"},
+                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/plain"},
                                 {NULL, NULL}
                             };
-    bool        moreFlags = 1;
-    bool        lastFlag = 1;
-    char        tmpBuf[4];
 
 
     /* Set request header fields to be send for HTTP request. */
     HTTPCli_setRequestFields(httpClient, fields);
 
-    /* Send PUT method request. */
+    /* Send POST method request. */
     /* Here we are setting moreFlags = 1 as there are some more header fields need to send
        other than setted in previous call HTTPCli_setRequestFields() at later stage.
        Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_PUT, PUT_REQUEST_URI, moreFlags);
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, ADHERENCE_URI, moreFlags);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP PUT request header.\n\r");
+        UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
-    sprintf((char *)tmpBuf, "%d", (sizeof(PUT_DATA)-1));
+    sprintf((char *)tmpBuf, "%d", (sizeof(adherenceString)-1));
 
     /* Here we are setting lastFlag = 1 as it is last header field.
        Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
     */
     lastFlag = 1;
-    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (char *)tmpBuf, lastFlag);
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP PUT request header.\n\r");
+        UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
-    /* Send PUT data/body */
-    lRetVal = HTTPCli_sendRequestBody(httpClient, PUT_DATA, (sizeof(PUT_DATA)-1));
+
+    /* Send POST data/body */
+    lRetVal = HTTPCli_sendRequestBody(httpClient, adherenceString, (sizeof(adherenceString)-1));
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP PUT request body.\n\r");
+        UART_PRINT("Failed to send HTTP POST request body.\n\r");
         return lRetVal;
     }
+
 
     lRetVal = readResponse(httpClient);
 
@@ -1022,6 +957,13 @@ static int HTTPPutMethod(HTTPCli_Handle httpClient)
 
 static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
 {
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char INTERVAL_URI[24] = ""; //60
+	strcat(INTERVAL_URI, INTERVAL_REQUEST_URI);
+	strcat(INTERVAL_URI, bottleUUID);
+	strcat(INTERVAL_URI, INTERVAL_REQUEST_END);
+
 	char acRecvbuff[1460];  // Buffer to receive datab
     long lRetVal = 0;
     int id;
@@ -1047,7 +989,7 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
     //
     // Make HTTP 1.1 GET request
     //
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, GET_REQUEST_URI, 0);
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, INTERVAL_URI, 0);
     if (lRetVal < 0)
     {
         return 	-1; //TODO: implement error code
@@ -1225,56 +1167,10 @@ DisplayBanner(char * AppName)
     UART_PRINT("\n\n\n\r");
 }
 
-
-//*****************************************************************************
-//
-//! Board Initialization & Configuration
-//!
-//! \param  None
-//!
-//! \return None
-//
-//*****************************************************************************
-static void
-BoardInit(void)
-{
-/* In case of TI-RTOS vector table is initialize by OS itself */
-#ifndef USE_TIRTOS
-  //
-  // Set vector table base
-  //
-#if defined(ccs) || defined(gcc)
-    MAP_IntVTableBaseSet((unsigned long)&g_pfnVectors[0]);
-#endif
-#if defined(ewarm)
-    MAP_IntVTableBaseSet((unsigned long)&__vector_table);
-#endif
-#endif
-    //
-    // Enable Processor
-    //
-    MAP_IntMasterEnable();
-    MAP_IntEnable(FAULT_SYSTICK);
-
-    PRCMCC3200MCUInit();
-}
-
-
 int httpDemo()
 {
     long lRetVal = -1;
     HTTPCli_Struct httpClient;
-
-
-    //
-    // Board Initialization
-    //
-    BoardInit();
-
-    //
-    // Configure the pinmux settings for the peripherals exercised
-    //
-    PinMuxConfig();
 
     //
     // Configuring UART
@@ -1301,35 +1197,25 @@ int httpDemo()
     }
 
     UART_PRINT("\n\r");
-    UART_PRINT("HTTP Post Begin:\n\r");
+    UART_PRINT("HTTP Post Activation Begin:\n\r");
     lRetVal = postActivationToHTTP(&httpClient);
     if(lRetVal < 0)
     {
-    	UART_PRINT("HTTP Post failed.\n\r");
+    	UART_PRINT("HTTP Post Activation failed.\n\r");
     }
     UART_PRINT("HTTP Post End:\n\r");
+    UART_PRINT("\n\r");
     /*
     UART_PRINT("\n\r");
-    UART_PRINT("HTTP Delete Begin:\n\r");
-    lRetVal = HTTPDeleteMethod(&httpClient);
-
+    UART_PRINT("HTTP Post Activation Begin:\n\r");
+    lRetVal = postAdherenceToHTTP(&httpClient, "111");
     if(lRetVal < 0)
     {
-    	UART_PRINT("HTTP Delete failed.\n\r");
+    	UART_PRINT("HTTP Post Activation failed.\n\r");
     }
-    UART_PRINT("HTTP Delete End:\n\r");
-
-
+    UART_PRINT("HTTP Post End:\n\r");
     UART_PRINT("\n\r");
-    UART_PRINT("HTTP Put Begin:\n\r");
-    lRetVal = HTTPPutMethod(&httpClient);
-    if(lRetVal < 0)
-    {
-    	UART_PRINT("HTTP Put failed.\n\r");
-    }
-    UART_PRINT("HTTP Put End:\n\r");
-	*/
-    UART_PRINT("\n\r");
+    */
     UART_PRINT("HTTP Get Begin:\n\r");
     lRetVal = getIntervalFromHTTP(&httpClient);
     if(lRetVal < 0)
