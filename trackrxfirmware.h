@@ -8,6 +8,8 @@
 #ifndef TRACKRXFIRMWARE_H_
 #define TRACKRXFIRMWARE_H_
 
+#define UUID_LENGTH 36
+
 int httpDemo();
 unsigned char * intToCharArray (int integer, int length, unsigned char * charArray);
 int charArrayToInt(unsigned char * charArray, int length);

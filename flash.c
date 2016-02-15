@@ -23,13 +23,6 @@
 
 #include "trackrxfirmware.h"
 
-long writeInterval_flash(int interval)
-{
-	unsigned char charArray[4];
-	intToCharArray(interval, 4, charArray);
-	return writeFileToDevice("interval", 0, charArray, 4);
-}
-
 static long writeFileToDevice(unsigned char * fileName,
 								unsigned int offset,
 								unsigned char * writeBuff,
@@ -103,14 +96,6 @@ static long writeFileToDevice(unsigned char * fileName,
     return 0;
 }
 
-int readInterval_flash()
-{
-	int interval;
-	unsigned char readBuff[4];
-	readFileFromDevice("interval", 0, readBuff, 4); // TODO error handle
-	return charArrayToInt(readBuff,4);
-}
-
 static long readFileFromDevice(unsigned char * fileName,
 								unsigned int offset,
 								unsigned char * readBuff,
@@ -119,7 +104,6 @@ static long readFileFromDevice(unsigned char * fileName,
 	unsigned long ulToken;
 	long lFileHandle;
     long lRetVal = -1;
-    int iLoopCnt = 0;
 
     //
     // open a user file for reading
@@ -154,4 +138,90 @@ static long readFileFromDevice(unsigned char * fileName,
     }
 
     return 0;
+}
+
+//-----------------------------------------------------------------------------
+// Following methods are used externally as the flash API
+//-----------------------------------------------------------------------------
+
+/* Return an integer representation of the dosage interval */
+int readInterval_flash()
+{
+	unsigned char readBuff[4];
+	readFileFromDevice("interval", 0, readBuff, 4); // TODO error handle
+	return charArrayToInt(readBuff,4);
+}
+
+/* Write the integer representation of the dosage interval to flash */
+long writeInterval_flash(int interval)
+{
+	unsigned char charArray[4];
+	intToCharArray(interval, 4, charArray);
+	return writeFileToDevice("interval", 0, charArray, 4);
+}
+
+long writeUUID_flash(unsigned char * uuid)
+{
+	return writeFileToDevice("uuid", 0, uuid, UUID_LENGTH);
+}
+
+long readUUID_flash(unsigned char * uuid)
+{
+	return readFileFromDevice("uuid", 0, uuid, UUID_LENGTH);
+}
+
+long writeSSID_flash(unsigned char * ssid, unsigned char length)
+{
+	int ret = writeFileToDevice("ssidlen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	return writeFileToDevice("ssid", 0, ssid, length);
+}
+
+long readSSID_flash(unsigned char * ssid)
+{
+	unsigned char length;
+	int ret = readFileFromDevice("ssidlen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	return readFileFromDevice("ssid", 0, ssid, length);
+}
+
+long writeSecurityKey_flash(unsigned char * pw, unsigned char length)
+{
+	int ret = writeFileToDevice("pwlen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	return writeFileToDevice("pw", 0, pw, length);
+}
+
+long readSecurityKey_flash(unsigned char * pw)
+{
+	unsigned char length;
+	int ret = readFileFromDevice("pwlen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	return readFileFromDevice("pw", 0, pw, length);
+}
+
+long writeAdherence_flash(unsigned char adhereBool)
+{
+	unsigned char length;
+	int ret = readFileFromDevice("historylen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	ret = writeFileToDevice("history", length+1, &adhereBool, 1);
+	if (ret < 0)
+		return ret;
+	length++;
+	return writeFileToDevice("historylen", 0, &length, 1);
+}
+
+long readAdherenceHistory_flash(unsigned char * history)
+{
+	unsigned char length;
+	int ret = readFileFromDevice("historylen", 0, &length, 1);
+	if (ret < 0)
+		return ret;
+	return readFileFromDevice("history", 0, history, length);
 }

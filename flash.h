@@ -25,17 +25,25 @@ typedef enum{
     STATUS_CODE_MAX = -0xBB8
 }e_AppStatusCodes;
 
-long writeInterval_flash(int interval);
 static long writeFileToDevice(unsigned char * fileName,
 								unsigned int offset,
 								unsigned char * writeBuff,
 								int length);
-int readInterval_flash();
 static long readFileFromDevice(unsigned char * fileName,
 								unsigned int offset,
 								unsigned char * readBuff,
 								int length);
 
+int readInterval_flash();
+long writeInterval_flash(int interval);
+long writeUUID_flash(unsigned char * uuid);
+long readUUID_flash(unsigned char * uuid);
+long writeSSID_flash(unsigned char * ssid, unsigned char length);
+long readSSID_flash(unsigned char * ssid);
+long writeAdherence_flash(unsigned char adhereBool);
+long readAdherenceHistory_flash(unsigned char * history);
+long readSecurityKey_flash(unsigned char * pw);
+long writeSecurityKey_flash(unsigned char * pw, unsigned char length);
 
 
 #endif /* FLASH_H_ */
