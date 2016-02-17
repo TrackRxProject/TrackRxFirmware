@@ -60,7 +60,7 @@ PinMuxConfig(void)
     //
     MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
-
+    MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK);
 
     //
     // Configure PIN_64 for GPIOOutput
@@ -79,6 +79,12 @@ PinMuxConfig(void)
     //
     MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
+
+    //
+    // Configure PIN_15 for LED
+    //
+    MAP_PinTypeGPIO(PIN_15, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA2_BASE, 0x40, GPIO_DIR_MODE_OUT);
 
     //
     // Configure PIN_55 for UART0 UART0_TX
