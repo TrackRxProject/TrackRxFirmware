@@ -64,8 +64,9 @@
 #include "timer_if.h"
 
 #include "trackrxfirmware.h"
-
+#include "sk6812miniLED_driver.h"
 #include "flash.h"
+#include "pwm.h"
 
 #define APPLICATION_VERSION     "1.1.1"
 
@@ -108,31 +109,18 @@ BoardInit(void)
 //                TI Copyrighted Code -- End
 //*****************************************************************************
 
-/******************* Dosing State Machine Definitions *************************/
-#define NOTIFY 			0
-#define QUIET_WAIT 		1
-#define DOSE_ACCESS 	2
-#define LOG				3
-#define SET_HIBERNATE	4
-#define HIBERNATE		5
-
-void sleepUntilNextDose();
-void dosingStateMachine();
-/******************************************************************************/
-/******************* Prescribing State Machine Definitions ********************/
-void prescribeStateMachine();
-/******************************************************************************/
-/*********************** Registering Bottle Definitions ***********************/
-void registerBottle();
-/******************************************************************************/
 void LEDSleepyBlinkyRoutine();
 
 void registerBottle()
 {
 	/* TODO: 	wait until set up is initiated,
 	 * 			transfer credentials,
-	 * 			mark bottle as registered on flash & server
 	 */
+	int interval = getIntervalAndActivate_http();
+	writeInterval_flash(interval);
+	unsigned char activationFlag = 1;
+	writeActivationFlag(&activationFlag);
+	sl_Stop();
 }
 
 void dosingStateMachine()
@@ -151,22 +139,21 @@ void dosingStateMachine()
 			/* TODO: Allow patient access to the dose */
 		} else if (doseState == LOG)
 		{
-			/* TODO: Log the dose being taken */
+			writeAdherence_flash(1);
 		} else if (doseState == SET_HIBERNATE)
 		{
-			/* TODO: Set the next dosing window */
+			doseState = HIBERNATE;
 		}
 	}
-	sleepUntilNextDose();
+	//TODO: read this from flash
+	sleepUntilNextDose(0.0083333);
 }
 
-void sleepUntilNextDose()
+void sleepUntilNextDose(float hours)
 {
-	float hours = 0.0083333; //TODO: Get this from the server or something
 	unsigned long long ticks = 3600*3278*hours;
 	PRCMHibernateIntervalSet(ticks);
 	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR);
-	//sl_Stop(NULL);
 	PRCMHibernateEnter();
 }
 
@@ -196,7 +183,7 @@ void LEDSleepyBlinkyRoutine()
         MAP_UtilsDelay(8000000);
         GPIO_IF_LedOff(MCU_GREEN_LED_GPIO);
         //httpDemo();
-        sleepUntilNextDose();
+        sleepUntilNextDose(0.0083333);
     //}
 
 }
@@ -208,22 +195,23 @@ int main()
 
     // Power on the corresponding GPIO port B for 9,10,11.
     // Set up the GPIO lines to mode 0 (GPIO)
-    //httpDemo();
     PinMuxConfig();
-    GPIO_IF_LedConfigure(LED1|LED2|LED3);
-    GPIO_IF_LedOff(MCU_ALL_LED_IND);
-    //sl_Start(NULL, NULL, NULL); //TODO: check error
+    //testPWM();
 
-    //writeInterval_flash(readInterval_flash()+1);
-    //int interval = readInterval_flash();
+    //GPIO_IF_LedConfigure(LED1|LED2|LED3);
+    //GPIO_IF_LedOff(MCU_ALL_LED_IND);
+    //LEDSleepyBlinkyRoutine();
 
-    LEDSleepyBlinkyRoutine();
+    sl_Start(NULL,NULL,NULL);
+    unsigned char registered_bottle = 0;
+    readActivationFlag(&registered_bottle);
+    sl_Stop();
 
     if(0/*TODO: If woken by GPIO interrupt*/)
     {
     	/* Pharmacists programming stuff here */
     	prescribeStateMachine();
-    } else if(0/*TODO: If REGISTERED_BOTTLE flag is not set in flash*/)
+    } else if(registered_bottle)
     {
     	registerBottle();
     } else

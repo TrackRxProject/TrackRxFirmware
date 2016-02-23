@@ -12,38 +12,6 @@
 //*****************************************************************************
 
 
-//*****************************************************************************
-//
-// Application Name     - HTTP Client Demo
-// Application Overview - This sample application demonstrates how to use
-//                          HTTP Client (In Minimum mode) API for HTTP based
-//                          application development.
-//                          This application explain user to how to:
-//                          1. Connect to an access point
-//                          2. Connect to a HTTP Server with and without proxy
-//                          3. Do POST, GET, PUT and DELETE
-//                          4. Parse JSON data using “Jasmine JSON Parser”
-// Note: To use HTTP Client in minimum mode, user need to compile library (webclient)
-// 			with HTTPCli_LIBTYPE_MIN option.
-//
-// 			HTTP Client (minimal) library supports synchronous mode, redirection
-// 			handling, chunked transfer encoding support, proxy support and TLS
-// 			support (for SimpleLink Only. TLS on other platforms are disabled)
-//
-// 			HTTP Client (Full) library supports all the features of the minimal
-// 			library + asynchronous mode and content handling support +
-// 			TLS support (all platforms). To use HTTP Client in full mode user need
-//			to compile library (webclient) with HTTPCli_LIBTYPE_MIN option. For full
-//			mode RTOS is needed.
-//
-// Application Details  -
-// http://processors.wiki.ti.com/index.php/
-// or
-// docs\examples\
-//
-//*****************************************************************************
-
-
 #include <string.h>
 
 // SimpleLink includes
@@ -77,7 +45,7 @@
 #define APP_NAME            	"HTTP Client"
 
 #define POST_ACTIVATION_URI 	"/prescription/"
-#define ACTIVATION_DATA			"1"
+#define ACTIVATION_DATA			"{1}"
 #define ACTIVATION_END_URI		"/activate"
 #define POST_ADHERENCE_URI		"/adherence/"
 
@@ -668,6 +636,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 	{
 		switch(lRetVal)
 		{
+		case 201:
 		case 200:
 		{
 			UART_PRINT("HTTP Status 200\n\r");
@@ -830,10 +799,11 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
 {
 	//TODO: Read this from flash sometime
 	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
-	char ACTIVATION_URI[24] = "";
+	char ACTIVATION_URI[25] = "";
 	strcat(ACTIVATION_URI, POST_ACTIVATION_URI);
 	strcat(ACTIVATION_URI, bottleUUID);
 	strcat(ACTIVATION_URI, ACTIVATION_END_URI);
+	strcat(ACTIVATION_URI, '\0');
 
     bool moreFlags = 1;
     bool lastFlag = 1;
@@ -842,7 +812,7 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     HTTPCli_Field fields[4] = {
                                 {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
                                 {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/plain"},
+                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "application/json"},
                                 {NULL, NULL}
                             };
 
@@ -863,13 +833,13 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
         return lRetVal;
     }
 
-    sprintf((char *)tmpBuf, "%d", (sizeof(ACTIVATION_DATA)-1));
+    //sprintf((char *)tmpBuf, "%d", (sizeof(ACTIVATION_DATA)-1));
 
     /* Here we are setting lastFlag = 1 as it is last header field.
        Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
     */
     lastFlag = 1;
-    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, "3", lastFlag);
     if(lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request header.\n\r");
@@ -887,7 +857,6 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
 
 
     lRetVal = readResponse(httpClient);
-
     return lRetVal;
 }
 
@@ -952,6 +921,7 @@ static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherence
 
     lRetVal = readResponse(httpClient);
 
+
     return lRetVal;
 }
 
@@ -959,12 +929,13 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
 {
 	//TODO: Read this from flash sometime
 	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
-	char INTERVAL_URI[24] = ""; //60
+	char INTERVAL_URI[25] = ""; //60
 	strcat(INTERVAL_URI, INTERVAL_REQUEST_URI);
 	strcat(INTERVAL_URI, bottleUUID);
 	strcat(INTERVAL_URI, INTERVAL_REQUEST_END);
+	strcat(INTERVAL_URI, '\0');
 
-	char acRecvbuff[1460];  // Buffer to receive datab
+	char acRecvbuff[1460];  // Buffer to receive data
     long lRetVal = 0;
     int id;
     int len = 1;
@@ -975,7 +946,7 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
                                 {NULL, NULL},
                               };
     const char *ids[4] = {
-            				HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+    						HTTPCli_FIELD_NAME_CONTENT_LENGTH,
                             HTTPCli_FIELD_NAME_CONNECTION,
                             HTTPCli_FIELD_NAME_CONTENT_TYPE,
                             NULL
@@ -1196,6 +1167,18 @@ int httpDemo()
         LOOP_FOREVER();
     }
 
+    UART_PRINT("HTTP Get Begin:\n\r");
+    lRetVal = getIntervalFromHTTP(&httpClient);
+    if(lRetVal < 0)
+    {
+    	UART_PRINT("HTTP Get failed.\n\r");
+    }
+    UART_PRINT("HTTP Get End:\n\r");
+    UART_PRINT("\n\r");
+
+    HTTPCli_disconnect(&httpClient);
+    ConnectToHTTPServer(&httpClient);
+
     UART_PRINT("\n\r");
     UART_PRINT("HTTP Post Activation Begin:\n\r");
     lRetVal = postActivationToHTTP(&httpClient);
@@ -1205,7 +1188,7 @@ int httpDemo()
     }
     UART_PRINT("HTTP Post End:\n\r");
     UART_PRINT("\n\r");
-    /*
+	/*
     UART_PRINT("\n\r");
     UART_PRINT("HTTP Post Activation Begin:\n\r");
     lRetVal = postAdherenceToHTTP(&httpClient, "111");
@@ -1216,17 +1199,28 @@ int httpDemo()
     UART_PRINT("HTTP Post End:\n\r");
     UART_PRINT("\n\r");
     */
-    UART_PRINT("HTTP Get Begin:\n\r");
-    lRetVal = getIntervalFromHTTP(&httpClient);
-    if(lRetVal < 0)
-    {
-    	UART_PRINT("HTTP Post Get failed.\n\r");
-    }
-    UART_PRINT("HTTP Get End:\n\r");
-    UART_PRINT("\n\r");
 
     // Stop the CC3200 device
 
     LOOP_FOREVER();
+}
+
+//-----------------------------------------------------------------------------
+// Methods used externally to interact with HTTP server follow
+//-----------------------------------------------------------------------------
+
+int getIntervalAndActivate_http()
+{
+    HTTPCli_Struct httpClient;
+    InitializeAppVariables();
+    ConnectToAP();
+    ConnectToHTTPServer(&httpClient);
+    int interval = getIntervalFromHTTP(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+    ConnectToHTTPServer(&httpClient);
+    postActivationToHTTP(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+    sl_WlanDisconnect();
+    return interval;
 }
 
