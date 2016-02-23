@@ -225,3 +225,13 @@ long readAdherenceHistory_flash(unsigned char * history)
 		return ret;
 	return readFileFromDevice("history", 0, history, length);
 }
+
+long readActivationFlag_flash(unsigned char * activationFlag)
+{
+	return readFileFromDevice("activation", 0, activationFlag, 1);
+}
+
+long writeActivationFlag_flash(unsigned char * activationFlag)
+{
+	return writeFileToDevice("activation", 0, activationFlag, 1);
+}

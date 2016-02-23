@@ -44,6 +44,8 @@ long writeAdherence_flash(unsigned char adhereBool);
 long readAdherenceHistory_flash(unsigned char * history);
 long readSecurityKey_flash(unsigned char * pw);
 long writeSecurityKey_flash(unsigned char * pw, unsigned char length);
+long readActivationFlag_flash(unsigned char * activationFlag);
+long writeActivationFlag_flash(unsigned char * activationFlag);
 
 
 #endif /* FLASH_H_ */
