@@ -55,7 +55,7 @@ static long writeFileToDevice(unsigned char * fileName,
     	if(lRetVal < 0)
     	{
     	    lRetVal = sl_FsClose(lFileHandle, 0, 0, 0);
-    	    return -1; //TODO error code
+    	    return lRetVal;
     	}
     	else
     	{
@@ -65,14 +65,14 @@ static long writeFileToDevice(unsigned char * fileName,
     	    lRetVal = sl_FsClose(lFileHandle, 0, 0, 0);
     	    if (SL_RET_CODE_OK != lRetVal)
     	    {
-    	        return -1; //TODO error code
+    	        return lRetVal;
     	    }
     	}
     }
     else if(lRetVal < 0)
     {
         lRetVal = sl_FsClose(lFileHandle, 0, 0, 0);
-        return -1; //TODO error code
+        return lRetVal;
     }
 
 
@@ -90,7 +90,7 @@ static long writeFileToDevice(unsigned char * fileName,
     lRetVal = sl_FsClose(lFileHandle, 0, 0, 0);
     if (SL_RET_CODE_OK != lRetVal)
     {
-        return -1; //TODO Error code
+        return lRetVal;
     }
 
     return 0;
@@ -172,10 +172,10 @@ long readUUID_flash(unsigned char * uuid)
 
 long writeSSID_flash(unsigned char * ssid, unsigned char length)
 {
-	int ret = writeFileToDevice("ssidlen", 0, &length, 1);
+	int ret = writeFileToDevice("ssid", 0, ssid, length);
 	if (ret < 0)
 		return ret;
-	return writeFileToDevice("ssid", 0, ssid, length);
+	return writeFileToDevice("ssidlen", 0, &length, 1);
 }
 
 long readSSID_flash(unsigned char * ssid)
