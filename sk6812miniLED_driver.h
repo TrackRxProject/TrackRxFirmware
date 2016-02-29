@@ -10,6 +10,8 @@
 
 
 void testLEDs();
+void clearNotification_led();
+void setNotification_led();
 
 
 #endif /* SK6812MINILED_DRIVER_H_ */

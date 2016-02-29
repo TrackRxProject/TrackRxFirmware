@@ -117,31 +117,43 @@ void registerBottle()
 	 * 			transfer credentials,
 	 */
 	int interval = getIntervalAndActivate_http();
+	sl_Stop(NULL);
+	sl_Start(NULL,NULL,NULL);
+	writeSSID_flash("Abraham Linksys", 15); //TODO: Get this from ASK
 	writeInterval_flash(interval);
 	unsigned char activationFlag = 1;
-	writeActivationFlag(&activationFlag);
-	sl_Stop();
+	writeActivationFlag_flash(&activationFlag);
+	sl_Stop(NULL);
+	sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
 }
 
 void dosingStateMachine()
 {
-	int doseState = NOTIFY;
+	int doseState = HIBERNATE; //TODO: Change me
 	while (doseState != HIBERNATE)
 	{
 		if(doseState == NOTIFY)
 		{
-			/* TODO: Notification code */
+			setNotification_led();
+			/* TODO: Set timer */
 		} else if (doseState == QUIET_WAIT)
 		{
-			/* TODO: If not opened in NOTIFY, kill notifications and wait quietly*/
+			clearNotification_led();
+			getAuthorization_ultrasonic();
+			doseState = DOSE_ACCESS;
 		} else if (doseState == DOSE_ACCESS)
 		{
-			/* TODO: Allow patient access to the dose */
+			openBottle_pwm();
+			doseState = LOG;
 		} else if (doseState == LOG)
 		{
+			sl_Start(NULL,NULL,NULL);
 			writeAdherence_flash(1);
-		} else if (doseState == SET_HIBERNATE)
-		{
+			unsigned char length = 0;
+			readHistoryLength_flash(&length);
+			sl_Stop(NULL);
+			if (length == 4)
+				postAdherence_http();
 			doseState = HIBERNATE;
 		}
 	}
@@ -149,48 +161,29 @@ void dosingStateMachine()
 	sleepUntilNextDose(0.0083333);
 }
 
+void prescribeStateMachine()
+{
+	getPharmAuthorization_ultrasonic();
+	sl_Start(NULL,NULL,NULL);
+	unsigned char flag = 0;
+	writeActivationFlag_flash(&zero);
+	writeHistoryLength_flash(&zero);
+	/* TODO: Write UUID into flash */
+	sl_Stop(NULL);
+}
+
 void sleepUntilNextDose(float hours)
 {
 	unsigned long long ticks = 3600*3278*hours;
 	PRCMHibernateIntervalSet(ticks);
-	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR);
+	PRCMHibernateWakeUpGPIOSelect(PRCM_HIB_GPIO26, PRCM_HIB_FALL_EDGE);
+	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR | PRCM_HIB_GPIO26);
 	PRCMHibernateEnter();
 }
 
-void LEDSleepyBlinkyRoutine()
-{
-    //
-    // Toggle the lines initially to turn off the LEDs.
-    // The values driven are as required by the LEDs on the LP.
-    //
-    GPIO_IF_LedOff(MCU_ALL_LED_IND);
-    //while(1)
-    //{
-        //
-        // Alternately toggle hi-low each of the GPIOs
-        // to switch the corresponding LED on/off.
-        //
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOff(MCU_RED_LED_GPIO);
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOn(MCU_ORANGE_LED_GPIO);
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOff(MCU_ORANGE_LED_GPIO);
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOn(MCU_GREEN_LED_GPIO);
-        MAP_UtilsDelay(8000000);
-        GPIO_IF_LedOff(MCU_GREEN_LED_GPIO);
-        //httpDemo();
-        sleepUntilNextDose(0.0083333);
-    //}
-
-}
-
-
 int main()
 {
+	unsigned long wakeupCause =  PRCMHibernateWakeupCauseGet();
     BoardInit();
 
     // Power on the corresponding GPIO port B for 9,10,11.
@@ -200,23 +193,29 @@ int main()
 
     //GPIO_IF_LedConfigure(LED1|LED2|LED3);
     //GPIO_IF_LedOff(MCU_ALL_LED_IND);
-    //LEDSleepyBlinkyRoutine();
 
     sl_Start(NULL,NULL,NULL);
     unsigned char registered_bottle = 0;
-    readActivationFlag(&registered_bottle);
-    sl_Stop();
+    readActivationFlag_flash(&registered_bottle);
+    sl_Stop(NULL);
 
-    if(0/*TODO: If woken by GPIO interrupt*/)
+
+    if(wakeupCause == PRCM_HIB_WAKEUP_CAUSE_GPIO)
     {
-    	/* Pharmacists programming stuff here */
     	prescribeStateMachine();
-    } else if(registered_bottle)
+    } else if(!registered_bottle)
     {
     	registerBottle();
     } else
     {
     	/* Notify, Administer, Log, and Hibernate */
+    	sl_Start(NULL,NULL,NULL);
+    	int interval = readInterval_flash();
+    	unsigned char ssid[50];
+    	readSSID_flash(ssid);
+    	unsigned char activation = 0;
+    	writeActivationFlag_flash(&activation);
+    	sl_Stop(NULL);
     	dosingStateMachine();
     }
 

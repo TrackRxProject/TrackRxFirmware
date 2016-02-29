@@ -108,3 +108,13 @@ void testLEDs()
 	}
 	}
 }
+
+void clearNotification_led()
+{
+/* TODO: IMPLEMENT ME */
+}
+
+void setNotification_led()
+{
+	/*TODO: IMPLEMENT ME */
+}
