@@ -18,5 +18,6 @@ void setupTimerPWMMode(unsigned long ulBase, unsigned long ulTimer,
 void disablePWMModules();
 void enablePWMModules();
 
+void openBottle_pwm();
 
 #endif /* PWM_H_ */
