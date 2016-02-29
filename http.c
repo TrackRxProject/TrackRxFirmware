@@ -417,13 +417,13 @@ static long ConfigureSimpleLinkToDefaultState()
                                 &ucConfigLen, (unsigned char *)(&ver));
     ASSERT_ON_ERROR(lRetVal);
 
-    UART_PRINT("Host Driver Version: %s\n\r",SL_DRIVER_VERSION);
-    UART_PRINT("Build Version %d.%d.%d.%d.31.%d.%d.%d.%d.%d.%d.%d.%d\n\r",
-    ver.NwpVersion[0],ver.NwpVersion[1],ver.NwpVersion[2],ver.NwpVersion[3],
-    ver.ChipFwAndPhyVersion.FwVersion[0],ver.ChipFwAndPhyVersion.FwVersion[1],
-    ver.ChipFwAndPhyVersion.FwVersion[2],ver.ChipFwAndPhyVersion.FwVersion[3],
-    ver.ChipFwAndPhyVersion.PhyVersion[0],ver.ChipFwAndPhyVersion.PhyVersion[1],
-    ver.ChipFwAndPhyVersion.PhyVersion[2],ver.ChipFwAndPhyVersion.PhyVersion[3]);
+    //UART_PRINT("Host Driver Version: %s\n\r",SL_DRIVER_VERSION);
+    //UART_PRINT("Build Version %d.%d.%d.%d.31.%d.%d.%d.%d.%d.%d.%d.%d\n\r",
+    //ver.NwpVersion[0],ver.NwpVersion[1],ver.NwpVersion[2],ver.NwpVersion[3],
+    //ver.ChipFwAndPhyVersion.FwVersion[0],ver.ChipFwAndPhyVersion.FwVersion[1],
+    //ver.ChipFwAndPhyVersion.FwVersion[2],ver.ChipFwAndPhyVersion.FwVersion[3],
+    //ver.ChipFwAndPhyVersion.PhyVersion[0],ver.ChipFwAndPhyVersion.PhyVersion[1],
+    //ver.ChipFwAndPhyVersion.PhyVersion[2],ver.ChipFwAndPhyVersion.PhyVersion[3]);
 
     // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
@@ -842,7 +842,7 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, "3", lastFlag);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
@@ -851,7 +851,7 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_sendRequestBody(httpClient, ACTIVATION_DATA, (sizeof(ACTIVATION_DATA)-1));
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request body.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request body.\n\r");
         return lRetVal;
     }
 
@@ -1037,14 +1037,14 @@ static long ConnectToAP()
     {
         if (DEVICE_NOT_IN_STATION_MODE == lRetVal)
         {
-            UART_PRINT("Failed to configure the device in its default state, "
-                            "Error-code: %d\n\r", DEVICE_NOT_IN_STATION_MODE);
+            //UART_PRINT("Failed to configure the device in its default state, "
+            //                "Error-code: %d\n\r", DEVICE_NOT_IN_STATION_MODE);
         }
 
         return -1;
     }
 
-    UART_PRINT("Device is configured in default state \n\r");
+    //UART_PRINT("Device is configured in default state \n\r");
 
     //
     // Assumption is that the device is configured in station mode already
@@ -1056,13 +1056,13 @@ static long ConnectToAP()
         ASSERT_ON_ERROR(DEVICE_START_FAILED);
     }
 
-    UART_PRINT("Device started as STATION \n\r");
+    //UART_PRINT("Device started as STATION \n\r");
 
     // Connecting to WLAN AP - Set with static parameters defined at the top
     // After this call we will be connected and have IP address
     lRetVal = WlanConnect();
 
-    UART_PRINT("Connected to the AP: %s\r\n", SSID_NAME);
+    //UART_PRINT("Connected to the AP: %s\r\n", SSID_NAME);
     return 0;
 }
 
@@ -1108,12 +1108,12 @@ static int ConnectToHTTPServer(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_connect(httpClient, (struct sockaddr *)&addr, 0, NULL);
     if (lRetVal < 0)
     {
-        UART_PRINT("Connection to server failed. error(%d)\n\r", lRetVal);
+        //UART_PRINT("Connection to server failed. error(%d)\n\r", lRetVal);
         ASSERT_ON_ERROR(SERVER_CONNECTION_FAILED);
     }
     else
     {
-        UART_PRINT("Connection to server created successfully\r\n");
+        //UART_PRINT("Connection to server created successfully\r\n");
     }
 
     return 0;
@@ -1222,5 +1222,15 @@ int getIntervalAndActivate_http()
     HTTPCli_disconnect(&httpClient);
     sl_WlanDisconnect();
     return interval;
+}
+
+void postAdherence_http()
+{
+	HTTPCli_Struct httpClient;
+	InitializeAppVariables();
+	ConnectToAP();
+	ConnectToHTTPServer(&httpClient);
+	//postAdherenceToHTTP(&httpClient);
+	HTTPCli_disconnect(&httpClient);
 }
 
