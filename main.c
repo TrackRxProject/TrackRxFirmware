@@ -67,6 +67,7 @@
 #include "sk6812miniLED_driver.h"
 #include "flash.h"
 #include "pwm.h"
+#include "ultrasonic.h"
 
 #define APPLICATION_VERSION     "1.1.1"
 
@@ -127,36 +128,20 @@ void registerBottle()
 	sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
 }
 
-void dosingStateMachine()
+void giveDose()
 {
-	int doseState = HIBERNATE; //TODO: Change me
-	while (doseState != HIBERNATE)
-	{
-		if(doseState == NOTIFY)
-		{
-			setNotification_led();
-			/* TODO: Set timer */
-		} else if (doseState == QUIET_WAIT)
-		{
-			clearNotification_led();
-			getAuthorization_ultrasonic();
-			doseState = DOSE_ACCESS;
-		} else if (doseState == DOSE_ACCESS)
-		{
-			openBottle_pwm();
-			doseState = LOG;
-		} else if (doseState == LOG)
-		{
-			sl_Start(NULL,NULL,NULL);
-			writeAdherence_flash(1);
-			unsigned char length = 0;
-			readHistoryLength_flash(&length);
-			sl_Stop(NULL);
-			if (length == 4)
-				postAdherence_http();
-			doseState = HIBERNATE;
-		}
-	}
+	setNotification_led();
+	startLEDwait_timer();
+	int authorized = getPatientAuthorization_ultrasonic(); //blocking call
+	if(authorized)
+		openBottle_pwm();
+	sl_Start(NULL,NULL,NULL);
+	writeAdherence_flash(1);
+	unsigned char length = 0;
+	readHistoryLength_flash(&length);
+	sl_Stop(NULL);
+	if (length == 4)
+		postAdherence_http();
 	//TODO: read this from flash
 	sleepUntilNextDose(0.0083333);
 }
@@ -165,7 +150,7 @@ void prescribeStateMachine()
 {
 	getPharmAuthorization_ultrasonic();
 	sl_Start(NULL,NULL,NULL);
-	unsigned char flag = 0;
+	unsigned char zero = 0;
 	writeActivationFlag_flash(&zero);
 	writeHistoryLength_flash(&zero);
 	/* TODO: Write UUID into flash */

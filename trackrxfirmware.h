@@ -9,16 +9,8 @@
 #define TRACKRXFIRMWARE_H_
 
 #define UUID_LENGTH 36
-/******************* Dosing State Machine Definitions *************************/
-#define NOTIFY 			0
-#define QUIET_WAIT 		1
-#define DOSE_ACCESS 	2
-#define LOG				3
-#define SET_HIBERNATE	4
-#define HIBERNATE		5
-
 void sleepUntilNextDose(float hours);
-void dosingStateMachine();
+void giveDose();
 /******************************************************************************/
 /******************* Prescribing State Machine Definitions ********************/
 void prescribeStateMachine();
