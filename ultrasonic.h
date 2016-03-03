@@ -8,7 +8,7 @@
 #ifndef ULTRASONIC_H_
 #define ULTRASONIC_H_
 
-void getAuthorization_ultrasonic();
+void getPatientAuthorization_ultrasonic();
 void getPharmAuthorization_ultrasonic();
 
 #endif /* ULTRASONIC_H_ */

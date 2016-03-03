@@ -233,7 +233,7 @@ long readHistoryLength_flash(unsigned char * length)
 
 long writeHistoryLength_flash(unsigned char * length)
 {
-	return writeFileToDevice("historylen", 0 length, 1);
+	return writeFileToDevice("historylen", 0, length, 1);
 }
 
 long readActivationFlag_flash(unsigned char * activationFlag)

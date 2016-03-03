@@ -41,9 +41,9 @@ long readUUID_flash(unsigned char * uuid);
 long writeSSID_flash(unsigned char * ssid, unsigned char length);
 long readSSID_flash(unsigned char * ssid);
 long writeAdherence_flash(unsigned char adhereBool);
-long readHistoryLength_flash(unsigned char * length)
+long readHistoryLength_flash(unsigned char * length);
 long readAdherenceHistory_flash(unsigned char * history);
-long writeHistoryLength_flash(unsigned char * length)
+long writeHistoryLength_flash(unsigned char * length);
 long readSecurityKey_flash(unsigned char * pw);
 long writeSecurityKey_flash(unsigned char * pw, unsigned char length);
 long readActivationFlag_flash(unsigned char * activationFlag);
