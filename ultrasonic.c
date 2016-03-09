@@ -7,12 +7,16 @@
  * used to communicate over ultrasound using ASK.
  */
 
-void getPatientAuthorization_ultrasonic()
+#include "ultrasonic.h"
+
+int getPatientAuthorization_ultrasonic()
 {
 	/*TODO: IMPLEMENT ME */
+	return AUTHORIZATION_FAILED;
 }
 
-void getPharmAuthorization_ultrasonic()
+int getPharmAuthorization_ultrasonic()
 {
 	/*TODO: IMPLEMENT ME */
+	return AUTHORIZATION_FAILED;
 }
