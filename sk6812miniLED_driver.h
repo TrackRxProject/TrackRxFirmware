@@ -8,8 +8,7 @@
 #ifndef SK6812MINILED_DRIVER_H_
 #define SK6812MINILED_DRIVER_H_
 
-
-void testLEDs();
+#define PIXELS 96
 void clearNotification_led();
 void setNotification_led();
 

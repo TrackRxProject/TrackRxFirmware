@@ -50,14 +50,6 @@ static void sendByte(unsigned char byte)
 	}
 }
 
-/* Following methods will be used by other files as an API */
-void ledSetup()
-{
-	MAP_PinTypeGPIO(PIN_50, PIN_MODE_0, false);
-	MAP_GPIODirModeSet(GPIOA0_BASE, 0x1, GPIO_DIR_MODE_OUT);
-
-}
-
 void setPixel(unsigned char r, unsigned char g, unsigned char b)
 {
 	sendByte(g);
@@ -65,56 +57,33 @@ void setPixel(unsigned char r, unsigned char g, unsigned char b)
 	sendByte(b);
 }
 
-void latchPixel()
+void latchPixels()
 {
 	MAP_UtilsDelay(560);
 }
 
-void testLEDs()
+void showColor(unsigned char r, unsigned char g, unsigned char b)
 {
-	//ledSetup();
-
-	/*while(1) {
-		sendBit(0);
-		sendBit(1);
-	}*/
-
-	while(1) {
-	int pixels = 96;
 	int i;
-	for (i = 0; i<pixels; i+=(pixels/60))
+	for(i = 0; i < PIXELS; i+=(PIXELS/60))
 	{
-		unsigned int p = 0;
+		int p = 0;
 		while(p++<=i)
-			setPixel(255,0,0);
-
-		while(p++<=pixels)
+			setPixel(r,g,b);
+		while(p++<=PIXELS)
 			setPixel(0,0,0);
-
-		latchPixel();
-
-	}
-	for (i = 0; i<pixels; i+=(pixels/60))
-	{
-		unsigned int p = 0;
-		while(p++<=i)
-			setPixel(0,255,0);
-
-		while(p++<=pixels)
-			setPixel(0,0,0);
-
-		latchPixel();
-
-	}
+		latchPixels();
 	}
 }
 
+/* Following methods will be used by other files as an API */
+
 void clearNotification_led()
 {
-/* TODO: IMPLEMENT ME */
+	showColor(255,255,255);
 }
 
 void setNotification_led()
 {
-	/*TODO: IMPLEMENT ME */
+	showColor(255,0,0);
 }
