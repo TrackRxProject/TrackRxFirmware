@@ -59,10 +59,12 @@ PinMuxConfig(void)
     // Enable Peripheral Clocks 
     //
     MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralClkEnable(PRCM_GPIOA0, PRCM_RUN_MODE_CLK);
     //MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK);
 
     /****************** PWM STUFF *******************************/
+    /*
     MAP_PRCMPeripheralClkEnable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
     //
@@ -77,6 +79,7 @@ PinMuxConfig(void)
     // Configure PIN_02 for TIMERPWM7 GT_PWM07
     //
     MAP_PinTypeTimer(PIN_02, PIN_MODE_3);
+    */
     /**************************************************************/
 
     /*
@@ -100,10 +103,10 @@ PinMuxConfig(void)
     */
 
     //
-    // Configure PIN_15 for driving LED strip
+    // Configure PIN_58 for driving LED strip
     //
-    MAP_PinTypeGPIO(PIN_15, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA2_BASE, 0x40, GPIO_DIR_MODE_OUT);
+    MAP_PinTypeGPIO(PIN_58, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA0_BASE, 0x8, GPIO_DIR_MODE_OUT);
 
     //
     // Configure PIN_55 for UART0 UART0_TX

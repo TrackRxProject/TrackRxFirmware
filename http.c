@@ -145,12 +145,12 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
                    pWlanEvent->EventData.STAandP2PModeWlanConnected.bssid,
                    SL_BSSID_LENGTH);
 
-            UART_PRINT("[WLAN EVENT] STA Connected to the AP: %s ,"
+           /* UART_PRINT("[WLAN EVENT] STA Connected to the AP: %s ,"
                             " BSSID: %x:%x:%x:%x:%x:%x\n\r",
                       g_ucConnectionSSID,g_ucConnectionBSSID[0],
                       g_ucConnectionBSSID[1],g_ucConnectionBSSID[2],
                       g_ucConnectionBSSID[3],g_ucConnectionBSSID[4],
-                      g_ucConnectionBSSID[5]);
+                      g_ucConnectionBSSID[5]);*/
         }
         break;
 
@@ -167,21 +167,23 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
             //'reason_code' is SL_USER_INITIATED_DISCONNECTION
             if(SL_USER_INITIATED_DISCONNECTION == pEventData->reason_code)
             {
-                UART_PRINT("[WLAN EVENT]Device disconnected from the AP: %s,"
+                /*UART_PRINT("[WLAN EVENT]Device disconnected from the AP: %s,"
                 "BSSID: %x:%x:%x:%x:%x:%x on application's request \n\r",
                            g_ucConnectionSSID,g_ucConnectionBSSID[0],
                            g_ucConnectionBSSID[1],g_ucConnectionBSSID[2],
                            g_ucConnectionBSSID[3],g_ucConnectionBSSID[4],
-                           g_ucConnectionBSSID[5]);
+                           g_ucConnectionBSSID[5]);*/
             }
             else
             {
+            	/*
                 UART_PRINT("[WLAN ERROR]Device disconnected from the AP AP: %s,"
                 "BSSID: %x:%x:%x:%x:%x:%x on an ERROR..!! \n\r",
                            g_ucConnectionSSID,g_ucConnectionBSSID[0],
                            g_ucConnectionBSSID[1],g_ucConnectionBSSID[2],
                            g_ucConnectionBSSID[3],g_ucConnectionBSSID[4],
                            g_ucConnectionBSSID[5]);
+                           */
             }
             memset(g_ucConnectionSSID,0,sizeof(g_ucConnectionSSID));
             memset(g_ucConnectionBSSID,0,sizeof(g_ucConnectionBSSID));
@@ -190,8 +192,8 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
 
         default:
         {
-            UART_PRINT("[WLAN EVENT] Unexpected event [0x%x]\n\r",
-                       pWlanEvent->Event);
+            /*UART_PRINT("[WLAN EVENT] Unexpected event [0x%x]\n\r",
+                       pWlanEvent->Event);*/
         }
         break;
     }
@@ -223,7 +225,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
             //Gateway IP address
             g_ulGatewayIP = pEventData->gateway;
 
-            UART_PRINT("[NETAPP EVENT] IP Acquired: IP=%d.%d.%d.%d , "
+            /*UART_PRINT("[NETAPP EVENT] IP Acquired: IP=%d.%d.%d.%d , "
             "Gateway=%d.%d.%d.%d\n\r",
             SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.ip,3),
             SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.ip,2),
@@ -232,14 +234,14 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
             SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.gateway,3),
             SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.gateway,2),
             SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.gateway,1),
-            SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.gateway,0));
+            SL_IPV4_BYTE(pNetAppEvent->EventData.ipAcquiredV4.gateway,0));*/
         }
         break;
 
         default:
         {
-            UART_PRINT("[NETAPP EVENT] Unexpected event [0x%x] \n\r",
-                       pNetAppEvent->Event);
+            /*UART_PRINT("[NETAPP EVENT] Unexpected event [0x%x] \n\r",
+                       pNetAppEvent->Event);*/
         }
         break;
     }
@@ -278,9 +280,9 @@ void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent)
     // Most of the general errors are not FATAL are are to be handled
     // appropriately by the application
     //
-    UART_PRINT("[GENERAL EVENT] - ID=[%d] Sender=[%d]\n\n",
+    /*UART_PRINT("[GENERAL EVENT] - ID=[%d] Sender=[%d]\n\n",
                pDevEvent->EventData.deviceEvent.status,
-               pDevEvent->EventData.deviceEvent.sender);
+               pDevEvent->EventData.deviceEvent.sender);*/
 }
 
 
@@ -304,20 +306,20 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
         	switch( pSock->socketAsyncEvent.SockTxFailData.status )
             {
                 case SL_ECLOSE:
-                    UART_PRINT("[SOCK ERROR] - close socket (%d) operation "
+                   /* UART_PRINT("[SOCK ERROR] - close socket (%d) operation "
                     "failed to transmit all queued packets\n\n",
-                           pSock->socketAsyncEvent.SockAsyncData.sd);
+                           pSock->socketAsyncEvent.SockAsyncData.sd);*/
                     break;
                 default:
-                    UART_PRINT("[SOCK ERROR] - TX FAILED : socket %d , reason"
+                    /*UART_PRINT("[SOCK ERROR] - TX FAILED : socket %d , reason"
                         "(%d) \n\n",
                         pSock->socketAsyncEvent.SockAsyncData.sd,
-                        pSock->socketAsyncEvent.SockTxFailData.status);
+                        pSock->socketAsyncEvent.SockTxFailData.status);*/
             }
             break;
 
         default:
-            UART_PRINT("[SOCK EVENT] - Unexpected Event [%x0x]\n\n",pSock->Event);
+            //UART_PRINT("[SOCK EVENT] - Unexpected Event [%x0x]\n\n",pSock->Event);
     }
 }
 
@@ -568,7 +570,7 @@ static int FlushHTTPResponse(HTTPCli_Handle httpClient)
         {
             if(!strncmp(buf, "close", sizeof("close")))
             {
-                UART_PRINT("Connection terminated by server\n\r");
+               // UART_PRINT("Connection terminated by server\n\r");
             }
         }
 
@@ -639,7 +641,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 		case 201:
 		case 200:
 		{
-			UART_PRINT("HTTP Status 200\n\r");
+			//UART_PRINT("HTTP Status 200\n\r");
 			/*
                  Set response header fields to filter response headers. All
                   other than set by this call we be skipped by library.
@@ -688,14 +690,14 @@ static int readResponse(HTTPCli_Handle httpClient)
 						 */
 						json = 0;
 					}
-					UART_PRINT(HTTPCli_FIELD_NAME_CONTENT_TYPE);
+					/*UART_PRINT(HTTPCli_FIELD_NAME_CONTENT_TYPE);
 					UART_PRINT(" : ");
-					UART_PRINT("application/json\n\r");
+					UART_PRINT("application/json\n\r");*/
 				}
 				break;
 				default:
 				{
-					UART_PRINT("Wrong filter id\n\r");
+					//UART_PRINT("Wrong filter id\n\r");
 					lRetVal = -1;
 					goto end;
 				}
@@ -707,7 +709,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 				dataBuffer = (char *) malloc(len);
 				if(dataBuffer)
 				{
-					UART_PRINT("Failed to allocate memory\n\r");
+					//UART_PRINT("Failed to allocate memory\n\r");
 					lRetVal = -1;
 					goto end;
 				}
@@ -729,13 +731,13 @@ static int readResponse(HTTPCli_Handle httpClient)
 			bytesRead = HTTPCli_readResponseBody(httpClient, (char *)dataBuffer, len, &moreFlags);
 			if(bytesRead < 0)
 			{
-				UART_PRINT("Failed to received response body\n\r");
+				//UART_PRINT("Failed to received response body\n\r");
 				lRetVal = bytesRead;
 				goto end;
 			}
 			else if( bytesRead < len || moreFlags)
 			{
-				UART_PRINT("Mismatch in content length and received data length\n\r");
+				//UART_PRINT("Mismatch in content length and received data length\n\r");
 				goto end;
 			}
 			dataBuffer[bytesRead] = '\0';
@@ -751,9 +753,9 @@ static int readResponse(HTTPCli_Handle httpClient)
 			}
 			else
 			{
-				UART_PRINT("\n\r");
-				UART_PRINT(dataBuffer);
-				UART_PRINT("\n\r");
+				//UART_PRINT("\n\r");
+				//UART_PRINT(dataBuffer);
+				//UART_PRINT("\n\r");
 				/* treating data as a plain text */
 			}
 
@@ -761,7 +763,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 		break;
 
 		case 404:
-			UART_PRINT("File not found. \r\n");
+			//UART_PRINT("File not found. \r\n");
 			/* Handle response body as per requirement.
                   Note:
                     Developers are advised to take appopriate action for HTTP
@@ -781,7 +783,7 @@ static int readResponse(HTTPCli_Handle httpClient)
 	}
 	else
 	{
-		UART_PRINT("Failed to receive data from server.\r\n");
+		//UART_PRINT("Failed to receive data from server.\r\n");
 		goto end;
 	}
 
@@ -829,7 +831,7 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, ACTIVATION_URI, moreFlags);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
@@ -860,11 +862,12 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     return lRetVal;
 }
 
-static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherenceString)
+static int putAdherenceToHTTP(HTTPCli_Handle httpClient, unsigned char * adherenceString, int adherenceLen)
 {
 	//TODO: Read this from flash sometime
-	char bottleUUID[] = "a151f962-36f6-41ca-a653-10c65b6c39c5";
-	char ADHERENCE_URI[47];
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	//char ADHERENCE_URI[47];
+	char ADHERENCE_URI[25];
 	strcat(ADHERENCE_URI, POST_ADHERENCE_URI);
 	strcat(ADHERENCE_URI, bottleUUID);
 
@@ -889,10 +892,10 @@ static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherence
        Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, ADHERENCE_URI, moreFlags);
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_PUT, ADHERENCE_URI, moreFlags);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
@@ -905,7 +908,7 @@ static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherence
     lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
@@ -914,7 +917,7 @@ static int postAdherenceToHTTP(HTTPCli_Handle httpClient, const char * adherence
     lRetVal = HTTPCli_sendRequestBody(httpClient, adherenceString, (sizeof(adherenceString)-1));
     if(lRetVal < 0)
     {
-        UART_PRINT("Failed to send HTTP POST request body.\n\r");
+        //UART_PRINT("Failed to send HTTP POST request body.\n\r");
         return lRetVal;
     }
 
@@ -1131,11 +1134,11 @@ static int ConnectToHTTPServer(HTTPCli_Handle httpClient)
 static void
 DisplayBanner(char * AppName)
 {
-    UART_PRINT("\n\n\n\r");
-    UART_PRINT("\t\t *************************************************\n\r");
-    UART_PRINT("\t\t      CC3200 %s Application       \n\r", AppName);
-    UART_PRINT("\t\t *************************************************\n\r");
-    UART_PRINT("\n\n\n\r");
+    //UART_PRINT("\n\n\n\r");
+    //UART_PRINT("\t\t *************************************************\n\r");
+    //UART_PRINT("\t\t      CC3200 %s Application       \n\r", AppName);
+    //UART_PRINT("\t\t *************************************************\n\r");
+    //UART_PRINT("\n\n\n\r");
 }
 
 int httpDemo()
@@ -1224,13 +1227,14 @@ int getIntervalAndActivate_http()
     return interval;
 }
 
-void postAdherence_http()
+void putAdherence_http(unsigned char * data, int length)
 {
 	HTTPCli_Struct httpClient;
 	InitializeAppVariables();
 	ConnectToAP();
 	ConnectToHTTPServer(&httpClient);
-	//postAdherenceToHTTP(&httpClient);
+	putAdherenceToHTTP(&httpClient, data, length);
 	HTTPCli_disconnect(&httpClient);
+	sl_WlanDisconnect();
 }
 

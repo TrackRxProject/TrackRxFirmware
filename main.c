@@ -68,6 +68,7 @@
 #include "flash.h"
 #include "pwm.h"
 #include "ultrasonic.h"
+#include "http.h"
 
 #define APPLICATION_VERSION     "1.1.1"
 
@@ -118,13 +119,15 @@ void registerBottle()
 	 * 			transfer credentials,
 	 */
 	int interval = getIntervalAndActivate_http();
-	sl_Stop(NULL);
+	sl_Stop(0xFF);
 	sl_Start(NULL,NULL,NULL);
-	writeSSID_flash("Abraham Linksys", 15); //TODO: Get this from ASK
-	writeInterval_flash(interval);
+	int ret = writeSSID_flash("Abraham Linksys", 15); //TODO: Get this from ASK
+	ret = writeInterval_flash(interval);
 	unsigned char activationFlag = 1;
-	writeActivationFlag_flash(&activationFlag);
-	sl_Stop(NULL);
+	ret = writeActivationFlag_flash(&activationFlag);
+	unsigned char zero = 0; //TODO: delete me
+	ret = writeHistoryLength_flash(&zero); //TODO: delete me
+	sl_Stop(0xFF);
 	sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
 }
 
@@ -132,16 +135,25 @@ void giveDose()
 {
 	setNotification_led();
 	startLEDwait_timer();
+	while(wait);
 	int authorized = getPatientAuthorization_ultrasonic(); //blocking call
 	if(authorized)
 		openBottle_pwm();
+	//TODO: else
 	sl_Start(NULL,NULL,NULL);
-	writeAdherence_flash(1);
+	int ret = writeAdherence_flash(1);
 	unsigned char length = 0;
 	readHistoryLength_flash(&length);
-	sl_Stop(NULL);
-	if (length == 4)
-		postAdherence_http();
+	if (length == ADHERENCE_LENGTH) {
+		unsigned char adherence[ADHERENCE_LENGTH];
+		readAdherenceHistory_flash(adherence);
+		unsigned char zero = 0;
+		writeHistoryLength_flash(&zero);
+		sl_Stop(0xFF);
+		putAdherence_http(adherence, ADHERENCE_LENGTH);
+	} else
+		sl_Stop(NULL);
+
 	//TODO: read this from flash
 	sleepUntilNextDose(0.0083333);
 }
@@ -151,8 +163,8 @@ void prescribeStateMachine()
 	getPharmAuthorization_ultrasonic();
 	sl_Start(NULL,NULL,NULL);
 	unsigned char zero = 0;
-	writeActivationFlag_flash(&zero);
-	writeHistoryLength_flash(&zero);
+	int ret = writeActivationFlag_flash(&zero);
+	ret = writeHistoryLength_flash(&zero);
 	/* TODO: Write UUID into flash */
 	sl_Stop(NULL);
 }
@@ -175,6 +187,10 @@ int main()
     // Set up the GPIO lines to mode 0 (GPIO)
     PinMuxConfig();
     //testPWM();
+    GPIOPinWrite(GPIOA0_BASE, 0x8,0x8);
+    while(1);
+    //setNotification_led();
+    return 0;
 
     //GPIO_IF_LedConfigure(LED1|LED2|LED3);
     //GPIO_IF_LedOff(MCU_ALL_LED_IND);
@@ -194,14 +210,7 @@ int main()
     } else
     {
     	/* Notify, Administer, Log, and Hibernate */
-    	sl_Start(NULL,NULL,NULL);
-    	int interval = readInterval_flash();
-    	unsigned char ssid[50];
-    	readSSID_flash(ssid);
-    	unsigned char activation = 0;
-    	writeActivationFlag_flash(&activation);
-    	sl_Stop(NULL);
-    	dosingStateMachine();
+    	giveDose();
     }
 
     return 0;

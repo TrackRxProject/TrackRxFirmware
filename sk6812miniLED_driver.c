@@ -27,15 +27,15 @@ void sendBit(unsigned char bit)
 	if(!bit)
 	{
 
-		GPIOPinWrite(GPIOA2_BASE, 0x40,64);
+		GPIOPinWrite(GPIOA0_BASE, 0x8,0x8);
 		UtilsDelay(6);
-		GPIOPinWrite(GPIOA2_BASE, 0x40, 0);
+		GPIOPinWrite(GPIOA0_BASE, 0x8, 0);
 		UtilsDelay(4);
 	} else
 	{
 		//send a 1
-		GPIOPinWrite(GPIOA2_BASE, 0x40,64);
-		GPIOPinWrite(GPIOA2_BASE, 0x40, 0);
+		GPIOPinWrite(GPIOA0_BASE, 0x8, 0x8);
+		GPIOPinWrite(GPIOA0_BASE, 0x8, 0);
 		UtilsDelay(6);
 	}
 }

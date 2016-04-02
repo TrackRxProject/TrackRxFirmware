@@ -9,6 +9,7 @@
 #define TRACKRXFIRMWARE_H_
 
 #define UUID_LENGTH 36
+#define ADHERENCE_LENGTH 4
 void sleepUntilNextDose(float hours);
 void giveDose();
 /******************************************************************************/
@@ -21,6 +22,8 @@ void registerBottle();
 int httpDemo();
 unsigned char * intToCharArray (int integer, int length, unsigned char * charArray);
 int charArrayToInt(unsigned char * charArray, int length);
+
+extern int wait;//TODO: Delete me
 
 
 #endif /* TRACKRXFIRMWARE_H_ */
