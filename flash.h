@@ -39,8 +39,10 @@ long writeInterval_flash(int interval);
 long writeUUID_flash(unsigned char * uuid);
 long readUUID_flash(unsigned char * uuid);
 long writeSSID_flash(unsigned char * ssid, unsigned char length);
+long readSSIDLen_flash(unsigned char * length);
 long readSSID_flash(unsigned char * ssid);
 long writeAdherence_flash(unsigned char adhereBool);
+long initAdherence_flash();
 long readHistoryLength_flash(unsigned char * length);
 long readAdherenceHistory_flash(unsigned char * history);
 long writeHistoryLength_flash(unsigned char * length);
@@ -48,6 +50,8 @@ long readSecurityKey_flash(unsigned char * pw);
 long writeSecurityKey_flash(unsigned char * pw, unsigned char length);
 long readActivationFlag_flash(unsigned char * activationFlag);
 long writeActivationFlag_flash(unsigned char * activationFlag);
+long readMissingDose_flash(unsigned char * missingDoseFlag);
+long writeMissingDose_flash(unsigned char * missingDoseFlag);
 
 
 #endif /* FLASH_H_ */

@@ -47,7 +47,7 @@ static long writeFileToDevice(unsigned char * fileName,
     	//  if the file does not exist, create it
     	//
     	lRetVal = sl_FsOpen(fileName,
-    	             FS_MODE_OPEN_CREATE(65536, \
+    	             FS_MODE_OPEN_CREATE(3584, \
     	                     _FS_FILE_OPEN_FLAG_COMMIT|_FS_FILE_PUBLIC_WRITE),
     	                     &ulToken,
     	                     &lFileHandle);
@@ -66,6 +66,15 @@ static long writeFileToDevice(unsigned char * fileName,
     	    if (SL_RET_CODE_OK != lRetVal)
     	    {
     	        return lRetVal;
+    	    }
+    	    // Now, open it for writing
+    	    lRetVal = sl_FsOpen(fileName,
+    	                            FS_MODE_OPEN_WRITE,
+    	                            &ulToken,
+    	                            &lFileHandle);
+    	    if (SL_RET_CODE_OK != lRetVal)
+    	    {
+    	    	return lRetVal;
     	    }
     	}
     }
@@ -187,6 +196,11 @@ long readSSID_flash(unsigned char * ssid)
 	return readFileFromDevice("ssid", 0, ssid, length);
 }
 
+long readSSIDLen_flash(unsigned char * length)
+{
+	return readFileFromDevice("ssidlen", 0, &length, 1);
+}
+
 long writeSecurityKey_flash(unsigned char * pw, unsigned char length)
 {
 	int ret = writeFileToDevice("pwlen", 0, &length, 1);
@@ -204,16 +218,26 @@ long readSecurityKey_flash(unsigned char * pw)
 	return readFileFromDevice("pw", 0, pw, length);
 }
 
+long initAdherence_flash()
+{
+	return writeFileToDevice("history", 0, 0, 1);
+}
+
 long writeAdherence_flash(unsigned char adhereBool)
 {
+	unsigned char adherence[ADHERENCE_LENGTH];
+	int ret = readAdherenceHistory_flash(adherence);
+	if (ret<0)
+		return ret;
 	unsigned char length;
-	int ret = readFileFromDevice("historylen", 0, &length, 1);
+	ret = readFileFromDevice("historylen", 0, &length, 1);
 	if (ret < 0)
 		return ret;
-	ret = writeFileToDevice("history", length+1, &adhereBool, 1);
-	if (ret < 0)
-		return ret;
+	adherence[length] = adhereBool;
 	length++;
+	ret = writeFileToDevice("history", 0, adherence, length);
+	if (ret < 0)
+		return ret;
 	return writeFileToDevice("historylen", 0, &length, 1);
 }
 
@@ -244,4 +268,14 @@ long readActivationFlag_flash(unsigned char * activationFlag)
 long writeActivationFlag_flash(unsigned char * activationFlag)
 {
 	return writeFileToDevice("activation", 0, activationFlag, 1);
+}
+
+long readMissingDose_flash(unsigned char * missingDoseFlag)
+{
+	return readFileFromDevice("missingdose", 0, missingDoseFlag, 1);
+}
+
+long writeMissingDose_flash(unsigned char * missingDoseFlag)
+{
+	return writeFileToDevice("missingdose", 0, missingDoseFlag, 1);
 }
