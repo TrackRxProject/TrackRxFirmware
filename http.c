@@ -1066,7 +1066,7 @@ static long ConnectToAP()
     lRetVal = WlanConnect();
 
     //UART_PRINT("Connected to the AP: %s\r\n", SSID_NAME);
-    return 0;
+    return lRetVal;
 }
 
 //*****************************************************************************
@@ -1119,7 +1119,7 @@ static int ConnectToHTTPServer(HTTPCli_Handle httpClient)
         //UART_PRINT("Connection to server created successfully\r\n");
     }
 
-    return 0;
+    return lRetVal;
 }
 
 //*****************************************************************************
@@ -1214,10 +1214,12 @@ int httpDemo()
 
 int getIntervalAndActivate_http()
 {
+	int ret = 0;
+
     HTTPCli_Struct httpClient;
     InitializeAppVariables();
-    ConnectToAP();
-    ConnectToHTTPServer(&httpClient);
+    ret = ConnectToAP();
+    ret = ConnectToHTTPServer(&httpClient);
     int interval = getIntervalFromHTTP(&httpClient);
     HTTPCli_disconnect(&httpClient);
     ConnectToHTTPServer(&httpClient);
