@@ -55,52 +55,36 @@
 void
 PinMuxConfig(void)
 {
+
     //
     // Enable Peripheral Clocks 
     //
     MAP_PRCMPeripheralClkEnable(PRCM_UARTA0, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA0, PRCM_RUN_MODE_CLK);
-    //MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK);
+    MAP_PRCMPeripheralClkEnable(PRCM_GPIOA3, PRCM_RUN_MODE_CLK);
 
     /****************** PWM STUFF *******************************/
-    /*
-    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkEnable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
+
     //
     // Configure PIN_64 for TIMERPWM5 GT_PWM05
     //
     MAP_PinTypeTimer(PIN_64, PIN_MODE_3);
+
     //
     // Configure PIN_01 for TIMERPWM6 GT_PWM06
     //
     MAP_PinTypeTimer(PIN_01, PIN_MODE_3);
+
     //
     // Configure PIN_02 for TIMERPWM7 GT_PWM07
     //
     MAP_PinTypeTimer(PIN_02, PIN_MODE_3);
-    */
+
+
     /**************************************************************/
-
-    /*
-    //
-    // Configure PIN_64 for GPIOOutput
-    //
-    MAP_PinTypeGPIO(PIN_64, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA1_BASE, 0x2, GPIO_DIR_MODE_OUT);
-
-    //
-    // Configure PIN_01 for GPIOOutput
-    //
-    MAP_PinTypeGPIO(PIN_01, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA1_BASE, 0x4, GPIO_DIR_MODE_OUT);
-
-    //
-    // Configure PIN_02 for GPIOOutput
-    //
-    MAP_PinTypeGPIO(PIN_02, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA1_BASE, 0x8, GPIO_DIR_MODE_OUT);
-    */
 
     //
     // Configure PIN_58 for driving LED strip
@@ -109,12 +93,29 @@ PinMuxConfig(void)
     MAP_GPIODirModeSet(GPIOA0_BASE, 0x8, GPIO_DIR_MODE_OUT);
 
     //
+    // Configure PIN_53 for pill bottle authorization (DEBUG ONLY)
+    MAP_PinTypeGPIO(PIN_53, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA3_BASE, 0x40, GPIO_DIR_MODE_IN);
+
+	//
+	// Configure PIN_08/GPIO17 for wake up pin
+	//
+	MAP_PinTypeGPIO(PIN_08, PIN_MODE_0, false);
+	MAP_GPIODirModeSet(GPIOA2_BASE, 0x2, GPIO_DIR_MODE_IN);
+
+	//
+	// Configure PIN_50 for Contact Input
+	//
+	PinTypeGPIO(PIN_50, PIN_MODE_0, false);
+	GPIODirModeSet(GPIOA0_BASE, 0x1, GPIO_DIR_MODE_IN);
+
+    //
     // Configure PIN_55 for UART0 UART0_TX
     //
-    MAP_PinTypeUART(PIN_55, PIN_MODE_3);
+    //MAP_PinTypeUART(PIN_55, PIN_MODE_3);
 
     //
     // Configure PIN_57 for UART0 UART0_RX
     //
-    MAP_PinTypeUART(PIN_57, PIN_MODE_3);
+    //MAP_PinTypeUART(PIN_57, PIN_MODE_3);
 }

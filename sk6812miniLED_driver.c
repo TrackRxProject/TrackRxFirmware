@@ -62,28 +62,24 @@ void latchPixels()
 	MAP_UtilsDelay(560);
 }
 
-void showColor(unsigned char r, unsigned char g, unsigned char b)
+/* Following methods will be used by other files as an API */
+
+void showColor_led(unsigned char r, unsigned char g, unsigned char b)
 {
 	int i;
-	for(i = 0; i < PIXELS; i+=(PIXELS/60))
+	for(i = 0; i < PIXELS; i++)
 	{
-		int p = 0;
-		while(p++<=i)
-			setPixel(r,g,b);
-		while(p++<=PIXELS)
-			setPixel(0,0,0);
-		latchPixels();
+		setPixel(r,g,b);
 	}
+	latchPixels();
 }
-
-/* Following methods will be used by other files as an API */
 
 void clearNotification_led()
 {
-	showColor(255,255,255);
+	showColor_led(255,255,255);
 }
 
 void setNotification_led()
 {
-	showColor(255,0,0);
+	showColor_led(255,255,0);
 }

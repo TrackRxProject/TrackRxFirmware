@@ -24,7 +24,7 @@
 #include "pinmux.h"
 #include "pwm.h"
 
-void updateDutyCycle(unsigned long ulBase, unsigned long ulTimer,
+void updateDutyCycle_pwm(unsigned long ulBase, unsigned long ulTimer,
                      unsigned char ucLevel)
 {
     //
@@ -74,64 +74,38 @@ void setupTimerPWMMode(unsigned long ulBase, unsigned long ulTimer,
 
 }
 
-void enablePWMModules()
+void enablePWMModules_pwm()
 {
-    //
-    // Initialization of timers to generate PWM output
-    //
-    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
-    MAP_PRCMPeripheralClkEnable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
-
-    //
-    // TIMERA2 (TIMER B) as RED of RGB light. GPIO 9 --> PWM_5
-    //
-    setupTimerPWMMode(TIMERA2_BASE, TIMER_B,
-            (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_B_PWM), 1);
-    //
-    // TIMERA3 (TIMER B) as YELLOW of RGB light. GPIO 10 --> PWM_6
-    //
-    setupTimerPWMMode(TIMERA3_BASE, TIMER_A,
-            (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PWM | TIMER_CFG_B_PWM), 1);
-    //
-    // TIMERA3 (TIMER A) as GREEN of RGB light. GPIO 11 --> PWM_7
-    //
     setupTimerPWMMode(TIMERA3_BASE, TIMER_B,
             (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PWM | TIMER_CFG_B_PWM), 1);
 
-    MAP_TimerEnable(TIMERA2_BASE,TIMER_B);
     MAP_TimerEnable(TIMERA3_BASE,TIMER_A);
-    MAP_TimerEnable(TIMERA3_BASE,TIMER_B);
 }
 
-void disablePWMModules()
+void disablePWMModules_pwm()
 {
-    MAP_TimerDisable(TIMERA2_BASE, TIMER_B);
     MAP_TimerDisable(TIMERA3_BASE, TIMER_A);
-    MAP_TimerDisable(TIMERA3_BASE, TIMER_B);
-    MAP_PRCMPeripheralClkDisable(PRCM_TIMERA2, PRCM_RUN_MODE_CLK);
     MAP_PRCMPeripheralClkDisable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
 }
 /**************** EXTERNALLY CALLED METHODS **********************************/
-void testPWM()
+void startNotify_pwm()
 {
-	enablePWMModules();
-	int iLoopCnt;
-    while(1)
-    {
-        //
-        // RYB - Update the duty cycle of the corresponding timers.
-        // This changes the brightness of the LEDs appropriately.
-        // The timers used are as per LP schematics.
-        //
-        for(iLoopCnt = 0; iLoopCnt < 255; iLoopCnt++)
-        {
-            updateDutyCycle(TIMERA2_BASE, TIMER_B, iLoopCnt);
-            updateDutyCycle(TIMERA3_BASE, TIMER_B, iLoopCnt);
-            updateDutyCycle(TIMERA3_BASE, TIMER_A, iLoopCnt);
-            MAP_UtilsDelay(800000);
-        }
-
+	int level = 255;
+	for (; level < 256; level++)
+	{
+		updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
+    	UtilsDelay(80000);
     }
+    for (; level >= 150; level--)
+    {
+    	updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
+    	UtilsDelay(80000);
+    }
+}
+
+void stopNotify_pwm()
+{
+	updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, 0);
 }
 
 void openBottle_pwm()

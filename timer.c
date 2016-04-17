@@ -18,12 +18,12 @@
 #include "timer_if.h"
 #include "trackrxfirmware.h"
 #include "sk6812miniLED_driver.h"
+
 int wait;
 void ledTimerIRQ(void)
 {
 	Timer_IF_InterruptClear(TIMERA0_BASE);
 	Timer_IF_DeInit(TIMERA0_BASE, TIMER_A);
-	clearNotification_led();
 	wait = 0;
 }
 
@@ -33,6 +33,6 @@ void startLEDwait_timer()
 	Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC, TIMER_A, 0);
 	Timer_IF_IntSetup(TIMERA0_BASE, TIMER_A, ledTimerIRQ);
 	/* Start the timer, in milliseconds */
-	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 30000);
+	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 10000);
 	wait = 1;
 }
