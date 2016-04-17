@@ -12,11 +12,11 @@
 int getPatientAuthorization_ultrasonic()
 {
 	/*TODO: IMPLEMENT ME */
-	return AUTHORIZATION_FAILED;
+	return AUTHORIZATION_SUCCEEDED;
 }
 
 int getPharmAuthorization_ultrasonic()
 {
 	/*TODO: IMPLEMENT ME */
-	return AUTHORIZATION_FAILED;
+	return AUTHORIZATION_SUCCEEDED;
 }
