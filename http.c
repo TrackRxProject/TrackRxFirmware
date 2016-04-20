@@ -52,6 +52,8 @@
 #define INTERVAL_REQUEST_URI 	"/prescription/"
 #define INTERVAL_REQUEST_END	"/interval"
 
+#define NOTIFY_URI				"/notify/"
+
 
 #define HOST_NAME       		"trackrx.xyz"
 #define HOST_PORT           	8000
@@ -61,6 +63,8 @@
 
 #define READ_SIZE           	1450
 #define MAX_BUFF_SIZE       	1460
+
+#define WLAN_DEL_ALL_PROFILES   0xFF
 
 
 // Application specific status/error codes
@@ -433,10 +437,6 @@ static long ConfigureSimpleLinkToDefaultState()
                                 SL_CONNECTION_POLICY(1, 0, 0, 0, 1), NULL, 0);
     ASSERT_ON_ERROR(lRetVal);
 
-    // Remove all profiles
-    lRetVal = sl_WlanProfileDel(0xFF);
-    ASSERT_ON_ERROR(lRetVal);
-
     //
     // Device in station-mode. Disconnect previous connection if any
     // The function returns 0 if 'Disconnected done', negative number if already
@@ -494,6 +494,52 @@ static long ConfigureSimpleLinkToDefaultState()
     return SUCCESS;
 }
 
+int SmartConfigConnect_http()
+{
+	sl_Start(0,0,0);
+	CLR_STATUS_BIT_ALL(g_ulStatus);
+    unsigned char policyVal;
+    long lRetVal = -1;
+
+    // Clear all profiles
+    // This is of course not a must, it is used in this example to make sure
+    // we will connect to the new profile added by SmartConfig
+    //
+    lRetVal = sl_WlanProfileDel(WLAN_DEL_ALL_PROFILES);
+    ASSERT_ON_ERROR(lRetVal);
+
+    //set AUTO policy
+    lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
+                      SL_CONNECTION_POLICY(1,0,0,0,1),
+                      &policyVal,
+                      1 /*PolicyValLen*/);
+    ASSERT_ON_ERROR(lRetVal);
+
+    // Start SmartConfig
+    // This example uses the unsecured SmartConfig method
+    //
+    lRetVal = sl_WlanSmartConfigStart(0,                /*groupIdBitmask*/
+                           SMART_CONFIG_CIPHER_NONE,    /*cipher*/
+                           0,                           /*publicKeyLen*/
+                           0,                           /*group1KeyLen*/
+                           0,                           /*group2KeyLen */
+                           NULL,                        /*publicKey */
+                           NULL,                        /*group1Key */
+                           NULL);                       /*group2Key*/
+    ASSERT_ON_ERROR(lRetVal);
+
+    // Wait for WLAN Event
+    while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
+    {
+        _SlNonOsMainLoopTask();
+    }
+     //reset to default AUTO policy
+     lRetVal = sl_WlanPolicySet(  SL_POLICY_CONNECTION,
+                           SL_CONNECTION_POLICY(1,0,0,0,0),
+                           &policyVal,
+                           1);
+     return SUCCESS;
+}
 
 
 //****************************************************************************
@@ -513,6 +559,7 @@ static long ConfigureSimpleLinkToDefaultState()
 //****************************************************************************
 static long WlanConnect()
 {
+	/*
     SlSecParams_t secParams = {0};
     long lRetVal = 0;
 
@@ -522,8 +569,10 @@ static long WlanConnect()
 
     lRetVal = sl_WlanConnect((signed char *)SSID_NAME,
                            strlen((const char *)SSID_NAME), 0, &secParams, 0);
-    ASSERT_ON_ERROR(lRetVal);
+                           */
 
+	sl_WlanPolicySet(SL_POLICY_CONNECTION,SL_CONNECTION_POLICY(0,1,0,0,0),NULL,0);
+	getWlanProfile();
     // Wait for WLAN Event
     while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
     {
@@ -862,6 +911,70 @@ static int postActivationToHTTP(HTTPCli_Handle httpClient)
     return lRetVal;
 }
 
+static int postNotifyToHTTP(HTTPCli_Handle httpClient)
+{
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char ACTIVATION_URI[25] = "";
+	strcat(ACTIVATION_URI, NOTIFY_URI);
+	strcat(ACTIVATION_URI, bottleUUID);
+	strcat(ACTIVATION_URI, '\0');
+
+    bool moreFlags = 1;
+    bool lastFlag = 1;
+    char tmpBuf[4];
+    long lRetVal = 0;
+    HTTPCli_Field fields[4] = {
+                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
+                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
+                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "application/json"},
+                                {NULL, NULL}
+                            };
+
+
+    /* Set request header fields to be send for HTTP request. */
+    HTTPCli_setRequestFields(httpClient, fields);
+
+    /* Send POST method request. */
+    /* Here we are setting moreFlags = 1 as there are some more header fields need to send
+       other than setted in previous call HTTPCli_setRequestFields() at later stage.
+       Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
+    */
+    moreFlags = 1;
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, ACTIVATION_URI, moreFlags);
+    if(lRetVal < 0)
+    {
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        return lRetVal;
+    }
+
+    //sprintf((char *)tmpBuf, "%d", (sizeof(ACTIVATION_DATA)-1));
+
+    /* Here we are setting lastFlag = 1 as it is last header field.
+       Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
+    */
+    lastFlag = 1;
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, "3", lastFlag);
+    if(lRetVal < 0)
+    {
+        //UART_PRINT("Failed to send HTTP POST request header.\n\r");
+        return lRetVal;
+    }
+
+
+    /* Send POST data/body */
+    lRetVal = HTTPCli_sendRequestBody(httpClient, ACTIVATION_DATA, (sizeof(ACTIVATION_DATA)-1));
+    if(lRetVal < 0)
+    {
+        //UART_PRINT("Failed to send HTTP POST request body.\n\r");
+        return lRetVal;
+    }
+
+
+    lRetVal = readResponse(httpClient);
+    return lRetVal;
+}
+
 static int putAdherenceToHTTP(HTTPCli_Handle httpClient, unsigned char * adherenceString, int adherenceLen)
 {
 	//TODO: Read this from flash sometime
@@ -899,7 +1012,7 @@ static int putAdherenceToHTTP(HTTPCli_Handle httpClient, unsigned char * adheren
         return lRetVal;
     }
 
-    sprintf((char *)tmpBuf, "%d", (sizeof(adherenceString)-1));
+    sprintf((char *)tmpBuf, "%d", adherenceLen);
 
     /* Here we are setting lastFlag = 1 as it is last header field.
        Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
@@ -914,7 +1027,7 @@ static int putAdherenceToHTTP(HTTPCli_Handle httpClient, unsigned char * adheren
 
 
     /* Send POST data/body */
-    lRetVal = HTTPCli_sendRequestBody(httpClient, adherenceString, (sizeof(adherenceString)-1));
+    lRetVal = HTTPCli_sendRequestBody(httpClient, adherenceString, adherenceLen);
     if(lRetVal < 0)
     {
         //UART_PRINT("Failed to send HTTP POST request body.\n\r");
@@ -1212,6 +1325,39 @@ int httpDemo()
 // Methods used externally to interact with HTTP server follow
 //-----------------------------------------------------------------------------
 
+int getWlanProfile()
+{
+	char pName[32];
+	int pNameLen;
+	unsigned char pMacAddr[6];
+	SlSecParams_t pSecParams;
+	SlGetSecParamsExt_t pSecExtParams;
+	int pPriority;
+	int ret = sl_WlanProfileGet(0, &pName, &pNameLen,
+								&pMacAddr,
+								&pSecParams,
+								&pSecExtParams,
+								&pPriority);
+	return ret;
+}
+
+void notify_http()
+{
+	int ret = 0;
+
+    HTTPCli_Struct httpClient;
+    InitializeAppVariables();
+    ret = ConnectToAP();
+    ret = ConnectToHTTPServer(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+    ConnectToHTTPServer(&httpClient);
+    postNotifyToHTTP(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+
+    sl_WlanDisconnect();
+
+}
+
 int getIntervalAndActivate_http()
 {
 	int ret = 0;
@@ -1225,6 +1371,7 @@ int getIntervalAndActivate_http()
     ConnectToHTTPServer(&httpClient);
     postActivationToHTTP(&httpClient);
     HTTPCli_disconnect(&httpClient);
+
     sl_WlanDisconnect();
     return interval;
 }

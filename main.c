@@ -69,6 +69,7 @@
 #include "pwm.h"
 #include "ultrasonic.h"
 #include "http.h"
+#include "secretkeys.h"
 
 #define APPLICATION_VERSION     "1.1.1"
 
@@ -112,6 +113,7 @@ BoardInit(void)
 //*****************************************************************************
 
 int stopMotor = 0;
+signed char SSID_NAME[32] = "";
 
 void notify()
 {
@@ -130,14 +132,11 @@ void notify()
 
 void registerBottle()
 {
-	/* TODO: 	wait until set up is initiated,
-	 * 			transfer credentials,
-	 */
+	SmartConfigConnect_http();
 	int interval = getIntervalAndActivate_http();
 	sl_Stop(0xFF);
 	sl_Start(NULL,NULL,NULL);
-	int ret = writeSSID_flash("Abraham Linksys", 15); //TODO: Get this from ASK
-	ret = writeInterval_flash(interval);
+	int	ret = writeInterval_flash(interval);
 	unsigned char activationFlag = 1;
 	ret = writeActivationFlag_flash(&activationFlag);
 	unsigned char zero = 0;
@@ -145,7 +144,8 @@ void registerBottle()
 	ret = writeHistoryLength_flash(&zero);
 	ret = writeMissingDose_flash(&zero);
 	sl_Stop(0xFF);
-	//sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
+	showColor_led(255,255,255);
+	sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
 }
 
 void dispense()
@@ -158,6 +158,18 @@ void dispense()
 	GPIOIntEnable(GPIOA0_BASE, GPIO_PIN_0);
 	//while(!stopMotor);
 	//stopMotor = 0;
+}
+
+void toASCII(unsigned char * adherence)
+{
+	int i;
+	for (i = 0; i < ADHERENCE_LENGTH; i++)
+	{
+		if (*(adherence+i)==0)
+			*(adherence+i) = 0x30;
+		else
+			*(adherence+i) = 0x31;
+	}
 }
 
 void giveDose(unsigned char missingDose)
@@ -188,6 +200,7 @@ void giveDose(unsigned char missingDose)
 				if (length == ADHERENCE_LENGTH) {
 					unsigned char adherence[ADHERENCE_LENGTH];
 					readAdherenceHistory_flash(adherence);
+					toASCII(adherence);
 					unsigned char zero = 0;
 					writeHistoryLength_flash(&zero);
 					sl_Stop(0xFF);
@@ -201,7 +214,7 @@ void giveDose(unsigned char missingDose)
 				sl_Stop(0xFF);
 			}
 			stopMotor = 0; //TODO DELETE ME
-			return;
+			sleepUntilNextDose(0.0083333);
 		}
 		stopMotor = 0; //TODO DELETE ME
 		sl_Start(NULL,NULL,NULL);
@@ -225,6 +238,7 @@ void giveDose(unsigned char missingDose)
 			if (length == ADHERENCE_LENGTH) {
 				unsigned char adherence[ADHERENCE_LENGTH];
 				readAdherenceHistory_flash(adherence);
+				toASCII(adherence);
 				unsigned char zero = 0;
 				writeHistoryLength_flash(&zero);
 				sl_Stop(0xFF);
@@ -234,16 +248,19 @@ void giveDose(unsigned char missingDose)
 			}
 		}
 	} else {
+		showColor_led(0,0,255);
 		// clear the missing flag before logging dose and hibernating
 		sl_Start(NULL,NULL,NULL);
 		int missingFlag = 0;
 		writeMissingDose_flash(&missingFlag);
+		showColor_led(255,255,255);
 	}
 	ret = writeAdherence_flash(1);
 	ret = readHistoryLength_flash(&length);
 	if (length == ADHERENCE_LENGTH) {
 		unsigned char adherence[ADHERENCE_LENGTH];
 		readAdherenceHistory_flash(adherence);
+		toASCII(adherence);
 		unsigned char zero = 0;
 		writeHistoryLength_flash(&zero);
 		sl_Stop(0xFF);
@@ -253,7 +270,7 @@ void giveDose(unsigned char missingDose)
 		sl_Stop(0xFF);
 
 	//TODO: read this from flash
-	//sleepUntilNextDose(0.0083333);
+	sleepUntilNextDose(0.0083333);
 }
 
 void prescribeStateMachine()
@@ -265,6 +282,7 @@ void prescribeStateMachine()
 	ret = writeHistoryLength_flash(&zero);
 	/* TODO: Write UUID into flash */
 	sl_Stop(NULL);
+	sleepUntilNextDose(0.008333);
 }
 
 void sleepUntilNextDose(float hours)
@@ -288,8 +306,7 @@ int main()
 	alarm = (alarmMSW) << 32;
 	alarm |= alarmLSW;
 	int gpioWakeup;
-start:
-	gpioWakeup = 0;//(alarm > current);
+	gpioWakeup = (alarm > current);
 
 	BoardInit();
     PinMuxConfig();
@@ -298,12 +315,9 @@ start:
     sl_Start(NULL,NULL,NULL);
     unsigned char registered_bottle = 0;
     int ret = readActivationFlag_flash(&registered_bottle);
-    /* Read WiFi Credentials from Flash */
-    readSSID_flash(SSID_NAME);
-    unsigned char length;
-    readSSIDLen_flash(&length);
-    SSID_NAME[length] = '\0';
-    sl_Stop(0xFF);
+
+    sl_Stop(0xFF)
+;
     if(gpioWakeup)
     {
     	sl_Start(NULL, NULL, NULL);
@@ -316,13 +330,12 @@ start:
     		prescribeStateMachine();
     } else if(!registered_bottle)
     {
+    	showColor_led(0, 255, 0);
     	registerBottle();
-    	goto start;
     } else
     {
     	/* Notify, Administer, Log, and Hibernate */
     	giveDose(0);
-    	goto start;
     }
 
     return 0;

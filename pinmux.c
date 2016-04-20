@@ -71,7 +71,7 @@ PinMuxConfig(void)
     //
     // Configure PIN_64 for TIMERPWM5 GT_PWM05
     //
-    MAP_PinTypeTimer(PIN_64, PIN_MODE_3);
+    //MAP_PinTypeTimer(PIN_64, PIN_MODE_3);
 
     //
     // Configure PIN_01 for TIMERPWM6 GT_PWM06
@@ -81,7 +81,7 @@ PinMuxConfig(void)
     //
     // Configure PIN_02 for TIMERPWM7 GT_PWM07
     //
-    MAP_PinTypeTimer(PIN_02, PIN_MODE_3);
+    //MAP_PinTypeTimer(PIN_02, PIN_MODE_3);
 
 
     /**************************************************************/
@@ -89,13 +89,8 @@ PinMuxConfig(void)
     //
     // Configure PIN_58 for driving LED strip
     //
-    MAP_PinTypeGPIO(PIN_58, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA0_BASE, 0x8, GPIO_DIR_MODE_OUT);
-
-    //
-    // Configure PIN_53 for pill bottle authorization (DEBUG ONLY)
-    MAP_PinTypeGPIO(PIN_53, PIN_MODE_0, false);
-    MAP_GPIODirModeSet(GPIOA3_BASE, 0x40, GPIO_DIR_MODE_IN);
+    MAP_PinTypeGPIO(PIN_04, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA1_BASE, 0x20, GPIO_DIR_MODE_OUT);
 
 	//
 	// Configure PIN_08/GPIO17 for wake up pin

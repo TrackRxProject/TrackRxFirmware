@@ -33,6 +33,6 @@ void startLEDwait_timer()
 	Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC, TIMER_A, 0);
 	Timer_IF_IntSetup(TIMERA0_BASE, TIMER_A, ledTimerIRQ);
 	/* Start the timer, in milliseconds */
-	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 10000);
+	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 1000);//10000);
 	wait = 1;
 }

@@ -27,7 +27,7 @@ void gpioISR();
 void dispense();
 
 extern int wait;
-extern signed char SSID_NAME[128];
+extern signed char SSID_NAME[32];
 
 
 #endif /* TRACKRXFIRMWARE_H_ */
