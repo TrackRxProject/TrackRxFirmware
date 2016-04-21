@@ -16,11 +16,12 @@
 #endif
 
 #include "timer_if.h"
+#include "trackrx_timer.h"
 #include "trackrxfirmware.h"
 #include "sk6812miniLED_driver.h"
 
 int wait;
-void ledTimerIRQ(void)
+void timerIRQ(void)
 {
 	Timer_IF_InterruptClear(TIMERA0_BASE);
 	Timer_IF_DeInit(TIMERA0_BASE, TIMER_A);
@@ -28,11 +29,17 @@ void ledTimerIRQ(void)
 }
 
 /****************************** PUBLIC API ***********************************/
-void startLEDwait_timer()
+void startWait_timer(long millis)
 {
 	Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC, TIMER_A, 0);
-	Timer_IF_IntSetup(TIMERA0_BASE, TIMER_A, ledTimerIRQ);
+	Timer_IF_IntSetup(TIMERA0_BASE, TIMER_A, timerIRQ);
 	/* Start the timer, in milliseconds */
-	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 1000);//10000);
+	Timer_IF_Start(TIMERA0_BASE, TIMER_A, millis);
 	wait = 1;
+}
+
+void stopWait_timer()
+{
+	Timer_IF_Stop(TIMERA0_BASE, TIMER_A);
+	Timer_IF_DeInit(TIMERA0_BASE, TIMER_A);
 }

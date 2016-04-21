@@ -69,6 +69,7 @@
 #include "pwm.h"
 #include "ultrasonic.h"
 #include "http.h"
+#include "trackrx_timer.h"
 #include "secretkeys.h"
 
 #define APPLICATION_VERSION     "1.1.1"
@@ -180,7 +181,7 @@ void giveDose(unsigned char missingDose)
 	if (!missingDose)
 	{
 		enablePWMModules_pwm();
-		startLEDwait_timer();
+		startWait_timer(1000);
 		while(wait) { notify();}
 		clearNotification_led();
 		stopNotify_pwm();

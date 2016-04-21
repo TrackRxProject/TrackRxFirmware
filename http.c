@@ -40,6 +40,7 @@
 
 #include "secretkeys.h"
 #include "trackrxfirmware.h"
+#include "trackrx_timer.h"
 
 #define APPLICATION_VERSION 	"1.1.1"
 #define APP_NAME            	"HTTP Client"
@@ -53,6 +54,8 @@
 #define INTERVAL_REQUEST_END	"/interval"
 
 #define NOTIFY_URI				"/notify/"
+#define AUTH_URI				"/auth/"
+#define RESET_URI				"/reset/"
 
 
 #define HOST_NAME       		"trackrx.xyz"
@@ -1117,9 +1120,158 @@ static int getIntervalFromHTTP(HTTPCli_Handle httpClient)
 	for (i=0; i < 4; i++)
 		acRecvbuff[i] -= 48;
     int interval = charArrayToInt((unsigned char *)acRecvbuff, 4);
-    return interval; //TODO: Implement success code
+    return interval;
 }
 
+static int getAuthorizationFromHTTP(HTTPCli_Handle httpClient)
+{
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char AUTH_URI_FINAL[8] = ""; //60
+	strcat(AUTH_URI_FINAL, AUTH_URI);
+	strcat(AUTH_URI_FINAL, bottleUUID);
+	strcat(AUTH_URI_FINAL, '\0');
+
+	char acRecvbuff[1460];  // Buffer to receive data
+    long lRetVal = 0;
+    int id;
+    int len = 1;
+    bool moreFlag = 0;
+    char ** prevRespFilelds = NULL;
+    HTTPCli_Field fields[2] = {
+                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
+                                {NULL, NULL},
+                              };
+    const char *ids[4] = {
+    						HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+                            HTTPCli_FIELD_NAME_CONNECTION,
+                            HTTPCli_FIELD_NAME_CONTENT_TYPE,
+                            NULL
+                         };
+    //
+    // Set request fields
+    //
+    HTTPCli_setRequestFields(httpClient, fields);
+
+
+    //
+    // Make HTTP 1.1 GET request
+    //
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, AUTH_URI_FINAL, 0);
+    if (lRetVal < 0)
+    {
+        return 	-1; //TODO: implement error code
+    }
+
+    //
+    // Test getResponseStatus: handle
+    //
+    lRetVal = HTTPCli_getResponseStatus(httpClient);
+    if (lRetVal != 200)
+    {
+        FlushHTTPResponse(httpClient);
+        return -2; //TODO: implement error code
+    }
+
+    prevRespFilelds = HTTPCli_setResponseFields(httpClient, ids);
+
+    //
+    // Read response headers
+    //
+    while ((id = HTTPCli_getResponseField(httpClient, acRecvbuff, sizeof(acRecvbuff), &moreFlag))
+            != HTTPCli_FIELD_ID_END)
+    {
+    }
+
+    HTTPCli_setResponseFields(httpClient, (const char **)prevRespFilelds);
+
+    //
+    // Read body
+    //
+
+    int read = 1;
+    while (read != 0)
+    {
+    	read = HTTPCli_readRawResponseBody(httpClient, acRecvbuff, sizeof(acRecvbuff)-1);
+    	len += read;
+    }
+    return acRecvbuff[0] - 48;
+}
+
+static int getResetFromHTTP(HTTPCli_Handle httpClient)
+{
+	//TODO: Read this from flash sometime
+	char bottleUUID[] = "1";//"a151f962-36f6-41ca-a653-10c65b6c39c5";
+	char RESET_URI_FINAL[9] = ""; //60
+	strcat(RESET_URI_FINAL, RESET_URI);
+	strcat(RESET_URI_FINAL, bottleUUID);
+	strcat(RESET_URI_FINAL, '\0');
+
+	char acRecvbuff[1460];  // Buffer to receive data
+    long lRetVal = 0;
+    int id;
+    int len = 1;
+    bool moreFlag = 0;
+    char ** prevRespFilelds = NULL;
+    HTTPCli_Field fields[2] = {
+                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
+                                {NULL, NULL},
+                              };
+    const char *ids[4] = {
+    						HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+                            HTTPCli_FIELD_NAME_CONNECTION,
+                            HTTPCli_FIELD_NAME_CONTENT_TYPE,
+                            NULL
+                         };
+    //
+    // Set request fields
+    //
+    HTTPCli_setRequestFields(httpClient, fields);
+
+
+    //
+    // Make HTTP 1.1 GET request
+    //
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, RESET_URI_FINAL, 0);
+    if (lRetVal < 0)
+    {
+        return 	-1; //TODO: implement error code
+    }
+
+    //
+    // Test getResponseStatus: handle
+    //
+    lRetVal = HTTPCli_getResponseStatus(httpClient);
+    if (lRetVal != 200)
+    {
+        FlushHTTPResponse(httpClient);
+        return -2; //TODO: implement error code
+    }
+
+    prevRespFilelds = HTTPCli_setResponseFields(httpClient, ids);
+
+    //
+    // Read response headers
+    //
+    while ((id = HTTPCli_getResponseField(httpClient, acRecvbuff, sizeof(acRecvbuff), &moreFlag))
+            != HTTPCli_FIELD_ID_END)
+    {
+    }
+
+    HTTPCli_setResponseFields(httpClient, (const char **)prevRespFilelds);
+
+    //
+    // Read body
+    //
+
+    int read = 1;
+    while (read != 0)
+    {
+    	read = HTTPCli_readRawResponseBody(httpClient, acRecvbuff, sizeof(acRecvbuff)-1);
+    	len += read;
+    }
+    return acRecvbuff[0] - 48;
+}
 
 //*****************************************************************************
 //
@@ -1232,92 +1384,6 @@ static int ConnectToHTTPServer(HTTPCli_Handle httpClient)
     return lRetVal;
 }
 
-//*****************************************************************************
-//
-//! Application startup display on UART
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-static void
-DisplayBanner(char * AppName)
-{
-    //UART_PRINT("\n\n\n\r");
-    //UART_PRINT("\t\t *************************************************\n\r");
-    //UART_PRINT("\t\t      CC3200 %s Application       \n\r", AppName);
-    //UART_PRINT("\t\t *************************************************\n\r");
-    //UART_PRINT("\n\n\n\r");
-}
-
-int httpDemo()
-{
-    long lRetVal = -1;
-    HTTPCli_Struct httpClient;
-
-    //
-    // Configuring UART
-    //
-    InitTerm();
-
-    //
-    // Display banner
-    //
-    DisplayBanner(APP_NAME);
-
-    InitializeAppVariables();
-
-    lRetVal = ConnectToAP();
-    if(lRetVal < 0)
-    {
-        LOOP_FOREVER();
-    }
-
-    lRetVal = ConnectToHTTPServer(&httpClient);
-    if(lRetVal < 0)
-    {
-        LOOP_FOREVER();
-    }
-
-    UART_PRINT("HTTP Get Begin:\n\r");
-    lRetVal = getIntervalFromHTTP(&httpClient);
-    if(lRetVal < 0)
-    {
-    	UART_PRINT("HTTP Get failed.\n\r");
-    }
-    UART_PRINT("HTTP Get End:\n\r");
-    UART_PRINT("\n\r");
-
-    HTTPCli_disconnect(&httpClient);
-    ConnectToHTTPServer(&httpClient);
-
-    UART_PRINT("\n\r");
-    UART_PRINT("HTTP Post Activation Begin:\n\r");
-    lRetVal = postActivationToHTTP(&httpClient);
-    if(lRetVal < 0)
-    {
-    	UART_PRINT("HTTP Post Activation failed.\n\r");
-    }
-    UART_PRINT("HTTP Post End:\n\r");
-    UART_PRINT("\n\r");
-	/*
-    UART_PRINT("\n\r");
-    UART_PRINT("HTTP Post Activation Begin:\n\r");
-    lRetVal = postAdherenceToHTTP(&httpClient, "111");
-    if(lRetVal < 0)
-    {
-    	UART_PRINT("HTTP Post Activation failed.\n\r");
-    }
-    UART_PRINT("HTTP Post End:\n\r");
-    UART_PRINT("\n\r");
-    */
-
-    // Stop the CC3200 device
-
-    LOOP_FOREVER();
-}
-
 //-----------------------------------------------------------------------------
 // Methods used externally to interact with HTTP server follow
 //-----------------------------------------------------------------------------
@@ -1343,8 +1409,15 @@ int checkAuthorization_http()
     ret = ConnectToAP();
     ret = ConnectToHTTPServer(&httpClient);
     int authorization = 1;//getAuthorizationFromHTTP(&httpClient);
-    for(attempts = 0; (attempts < 5) && (authorization==0); attempts++)
-    	authorization = 1;//getAuthorizationFromHTTP(&httpClient);
+    if(!authorization)
+    {
+    	startWait_timer(10000);
+    	while(wait && !authorization)
+        {
+        	authorization = 1;//getResetFromHTTP(&httpClient);
+        	UtilsDelay(800000);
+        }
+    }
     HTTPCli_disconnect(&httpClient);
     sl_WlanDisconnect();
     return authorization;
@@ -1353,14 +1426,20 @@ int checkAuthorization_http()
 int checkPharmacyReset_http()
 {
 	long ret;
-	int attempts = 0;
     HTTPCli_Struct httpClient;
     InitializeAppVariables();
     ret = ConnectToAP();
     ret = ConnectToHTTPServer(&httpClient);
     int reset = 1;//getResetFromHTTP(&httpClient);
-    for(attempts = 0; (attempts < 5) && (reset==0); attempts++)
-    	reset = 1;//getResetFromHTTP(&httpClient);
+    if(!reset)
+    {
+    	startWait_timer(10000);
+    	while(wait && !reset)
+        {
+        	reset = 1;//getResetFromHTTP(&httpClient);
+        	UtilsDelay(800000);
+        }
+    }
     HTTPCli_disconnect(&httpClient);
     sl_WlanDisconnect();
     return reset;

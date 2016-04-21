@@ -26,6 +26,4 @@ int charArrayToInt(unsigned char * charArray, int length);
 void gpioISR();
 void dispense();
 
-extern int wait;
-
 #endif /* TRACKRXFIRMWARE_H_ */
