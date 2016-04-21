@@ -179,45 +179,6 @@ long readUUID_flash(unsigned char * uuid)
 	return readFileFromDevice("uuid", 0, uuid, UUID_LENGTH);
 }
 
-long writeSSID_flash(unsigned char * ssid, unsigned char length)
-{
-	int ret = writeFileToDevice("ssid", 0, ssid, length);
-	if (ret < 0)
-		return ret;
-	return writeFileToDevice("ssidlen", 0, &length, 1);
-}
-
-long readSSID_flash(unsigned char * ssid)
-{
-	unsigned char length;
-	int ret = readFileFromDevice("ssidlen", 0, &length, 1);
-	if (ret < 0)
-		return ret;
-	return readFileFromDevice("ssid", 0, ssid, length);
-}
-
-long readSSIDLen_flash(unsigned char * length)
-{
-	return readFileFromDevice("ssidlen", 0, &length, 1);
-}
-
-long writeSecurityKey_flash(unsigned char * pw, unsigned char length)
-{
-	int ret = writeFileToDevice("pwlen", 0, &length, 1);
-	if (ret < 0)
-		return ret;
-	return writeFileToDevice("pw", 0, pw, length);
-}
-
-long readSecurityKey_flash(unsigned char * pw)
-{
-	unsigned char length;
-	int ret = readFileFromDevice("pwlen", 0, &length, 1);
-	if (ret < 0)
-		return ret;
-	return readFileFromDevice("pw", 0, pw, length);
-}
-
 long initAdherence_flash()
 {
 	return writeFileToDevice("history", 0, 0, 1);
