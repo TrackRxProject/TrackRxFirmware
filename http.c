@@ -314,7 +314,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
                     "failed to transmit all queued packets\n\n",
                            pSock->socketAsyncEvent.SockAsyncData.sd);*/
                     break;
-                default:
+                default:;
                     /*UART_PRINT("[SOCK ERROR] - TX FAILED : socket %d , reason"
                         "(%d) \n\n",
                         pSock->socketAsyncEvent.SockAsyncData.sd,
@@ -322,7 +322,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
             }
             break;
 
-        default:
+        default:;
             //UART_PRINT("[SOCK EVENT] - Unexpected Event [%x0x]\n\n",pSock->Event);
     }
 }
@@ -572,7 +572,6 @@ static long WlanConnect()
                            */
 
 	sl_WlanPolicySet(SL_POLICY_CONNECTION,SL_CONNECTION_POLICY(0,1,0,0,0),NULL,0);
-	getWlanProfile();
     // Wait for WLAN Event
     while((!IS_CONNECTED(g_ulStatus)) || (!IS_IP_ACQUIRED(g_ulStatus)))
     {
@@ -1036,8 +1035,6 @@ static int putAdherenceToHTTP(HTTPCli_Handle httpClient, unsigned char * adheren
 
 
     lRetVal = readResponse(httpClient);
-
-
     return lRetVal;
 }
 
@@ -1325,40 +1322,51 @@ int httpDemo()
 // Methods used externally to interact with HTTP server follow
 //-----------------------------------------------------------------------------
 
-int getWlanProfile()
-{
-	char pName[32];
-	int pNameLen;
-	unsigned char pMacAddr[6];
-	SlSecParams_t pSecParams;
-	SlGetSecParamsExt_t pSecExtParams;
-	int pPriority;
-	int ret = sl_WlanProfileGet(0, &pName, &pNameLen,
-								&pMacAddr,
-								&pSecParams,
-								&pSecExtParams,
-								&pPriority);
-	return ret;
-}
-
 void notify_http()
 {
-	int ret = 0;
-
+	long ret;
     HTTPCli_Struct httpClient;
     InitializeAppVariables();
     ret = ConnectToAP();
     ret = ConnectToHTTPServer(&httpClient);
-    HTTPCli_disconnect(&httpClient);
-    ConnectToHTTPServer(&httpClient);
     postNotifyToHTTP(&httpClient);
     HTTPCli_disconnect(&httpClient);
-
     sl_WlanDisconnect();
-
 }
 
-int getIntervalAndActivate_http()
+int checkAuthorization_http()
+{
+	long ret;
+	int attempts = 0;
+    HTTPCli_Struct httpClient;
+    InitializeAppVariables();
+    ret = ConnectToAP();
+    ret = ConnectToHTTPServer(&httpClient);
+    int authorization = 1;//getAuthorizationFromHTTP(&httpClient);
+    for(attempts = 0; (attempts < 5) && (authorization==0); attempts++)
+    	authorization = 1;//getAuthorizationFromHTTP(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+    sl_WlanDisconnect();
+    return authorization;
+}
+
+int checkPharmacyReset_http()
+{
+	long ret;
+	int attempts = 0;
+    HTTPCli_Struct httpClient;
+    InitializeAppVariables();
+    ret = ConnectToAP();
+    ret = ConnectToHTTPServer(&httpClient);
+    int reset = 1;//getResetFromHTTP(&httpClient);
+    for(attempts = 0; (attempts < 5) && (reset==0); attempts++)
+    	reset = 1;//getResetFromHTTP(&httpClient);
+    HTTPCli_disconnect(&httpClient);
+    sl_WlanDisconnect();
+    return reset;
+}
+
+int getInterval_http()
 {
 	int ret = 0;
 
@@ -1368,12 +1376,22 @@ int getIntervalAndActivate_http()
     ret = ConnectToHTTPServer(&httpClient);
     int interval = getIntervalFromHTTP(&httpClient);
     HTTPCli_disconnect(&httpClient);
-    ConnectToHTTPServer(&httpClient);
+    sl_WlanDisconnect();
+    return interval;
+}
+
+void postActivate_http()
+{
+	int ret = 0;
+
+    HTTPCli_Struct httpClient;
+    InitializeAppVariables();
+    ret = ConnectToAP();
+    ret = ConnectToHTTPServer(&httpClient);
     postActivationToHTTP(&httpClient);
     HTTPCli_disconnect(&httpClient);
 
     sl_WlanDisconnect();
-    return interval;
 }
 
 void putAdherence_http(unsigned char * data, int length)

@@ -113,7 +113,6 @@ BoardInit(void)
 //*****************************************************************************
 
 int stopMotor = 0;
-signed char SSID_NAME[32] = "";
 
 void notify()
 {
@@ -132,20 +131,22 @@ void notify()
 
 void registerBottle()
 {
+	long ret;
+	unsigned char activationFlag, zero;
+
 	SmartConfigConnect_http();
-	int interval = getIntervalAndActivate_http();
+	postActivate_http();
 	sl_Stop(0xFF);
 	sl_Start(NULL,NULL,NULL);
-	int	ret = writeInterval_flash(interval);
-	unsigned char activationFlag = 1;
+	activationFlag = 1;
 	ret = writeActivationFlag_flash(&activationFlag);
-	unsigned char zero = 0;
+	zero = 0;
 	ret = initAdherence_flash();
 	ret = writeHistoryLength_flash(&zero);
 	ret = writeMissingDose_flash(&zero);
 	sl_Stop(0xFF);
 	showColor_led(255,255,255);
-	sleepUntilNextDose(0.0083333); //TODO: use value from flash instead
+	sleepUntilNextDose();
 }
 
 void dispense()
@@ -184,7 +185,7 @@ void giveDose(unsigned char missingDose)
 		clearNotification_led();
 		stopNotify_pwm();
 		disablePWMModules_pwm();
-		int authorized = !stopMotor; //getPatientAuthorization_ultrasonic(); //blocking call
+		int authorized = !stopMotor; //checkAuthorization_http();
 		if(authorized)
 			openBottle_pwm();
 		else {
@@ -214,7 +215,7 @@ void giveDose(unsigned char missingDose)
 				sl_Stop(0xFF);
 			}
 			stopMotor = 0; //TODO DELETE ME
-			sleepUntilNextDose(0.0083333);
+			sleepUntilNextDose();
 		}
 		stopMotor = 0; //TODO DELETE ME
 		sl_Start(NULL,NULL,NULL);
@@ -248,10 +249,13 @@ void giveDose(unsigned char missingDose)
 			}
 		}
 	} else {
+		int authorization = checkAuthorization_http();
+		if (!authorization)
+			return; //Returning to main function will result in hibernation
 		showColor_led(0,0,255);
 		// clear the missing flag before logging dose and hibernating
 		sl_Start(NULL,NULL,NULL);
-		int missingFlag = 0;
+		unsigned char missingFlag = 0;
 		writeMissingDose_flash(&missingFlag);
 		showColor_led(255,255,255);
 	}
@@ -269,8 +273,7 @@ void giveDose(unsigned char missingDose)
 	} else
 		sl_Stop(0xFF);
 
-	//TODO: read this from flash
-	sleepUntilNextDose(0.0083333);
+	sleepUntilNextDose();
 }
 
 void prescribeStateMachine()
@@ -281,13 +284,33 @@ void prescribeStateMachine()
 	int ret = writeActivationFlag_flash(&zero);
 	ret = writeHistoryLength_flash(&zero);
 	/* TODO: Write UUID into flash */
-	sl_Stop(NULL);
-	sleepUntilNextDose(0.008333);
+	sl_Stop(0xFF);
+	sleepUntilNextDose();
 }
 
-void sleepUntilNextDose(float hours)
+void sleepUntilNextDose()
 {
-	unsigned long long ticks = 117964800*hours;//3600*3278*hours;
+	float hours;
+	hours =getInterval_http();
+	//readInterval_flash returns a fixed floating point number
+	//of the form xxyy which represents xx.yy
+	hours = hours / 100;
+	hours = hours / 60; //TODO: delete me (hours to minutes for testing)
+	sl_Stop(0xFF);
+
+	hours = 0.008333; //TODO: delete me
+	unsigned long long ticks = 117964800*hours;
+	// Zero out the slow counter
+	PRCMHIBRegWrite(HIB3P3_BASE + 0x0000001C, 0);
+	PRCMHIBRegWrite(HIB3P3_BASE + 0x00000020, 0);
+	PRCMHibernateIntervalSet(ticks);
+	PRCMHibernateWakeUpGPIOSelect(PRCM_HIB_GPIO17, PRCM_HIB_FALL_EDGE);
+	PRCMHibernateWakeupSourceEnable(PRCM_HIB_SLOW_CLK_CTR | PRCM_HIB_GPIO17);
+	PRCMHibernateEnter();
+}
+
+void sleepUntilNextDoseTicks(unsigned long long ticks)
+{
 	// Zero out the slow counter
 	PRCMHIBRegWrite(HIB3P3_BASE + 0x0000001C, 0);
 	PRCMHIBRegWrite(HIB3P3_BASE + 0x00000020, 0);
@@ -337,7 +360,12 @@ int main()
     	/* Notify, Administer, Log, and Hibernate */
     	giveDose(0);
     }
-
+    /* Should only get here if the bottle was
+     * woken up early by the push button AND
+     * neither a missing dose was taken nor
+     * the bottle was reset by the pharmacist
+     */
+    sleepUntilNextDoseTicks(alarm-current);
     return 0;
 }
 

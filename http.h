@@ -8,8 +8,12 @@
 #ifndef HTTP_H_
 #define HTTP_H_
 
-int getIntervalAndActivate_http();
+void postActivate_http();
+int getInterval_http();
 void postAdherence_http();
 void putAdherence_http(unsigned char * data, int length);
+int checkAuthorization_http();
+void notify_http();
+int SmartConfigConnect_http();
 
 #endif /* HTTP_H_ */
