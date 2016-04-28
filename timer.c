@@ -24,18 +24,19 @@ int wait;
 void timerIRQ(void)
 {
 	Timer_IF_InterruptClear(TIMERA0_BASE);
-	Timer_IF_DeInit(TIMERA0_BASE, TIMER_A);
-	wait = 0;
+	if(wait>0)
+		wait--;
+	if(wait==0)
+		Timer_IF_DeInit(TIMERA0_BASE, TIMER_A);
 }
 
 /****************************** PUBLIC API ***********************************/
-void startWait_timer(long millis)
+void startWait_timer(long seconds)
 {
 	Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC, TIMER_A, 0);
 	Timer_IF_IntSetup(TIMERA0_BASE, TIMER_A, timerIRQ);
-	/* Start the timer, in milliseconds */
-	Timer_IF_Start(TIMERA0_BASE, TIMER_A, millis);
-	wait = 1;
+	Timer_IF_Start(TIMERA0_BASE, TIMER_A, 1000);
+	wait = seconds;
 }
 
 void stopWait_timer()

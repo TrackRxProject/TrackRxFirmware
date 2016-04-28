@@ -69,28 +69,24 @@ PinMuxConfig(void)
     MAP_PRCMPeripheralClkEnable(PRCM_TIMERA3, PRCM_RUN_MODE_CLK);
 
     //
-    // Configure PIN_64 for TIMERPWM5 GT_PWM05
-    //
-    //MAP_PinTypeTimer(PIN_64, PIN_MODE_3);
-
-    //
     // Configure PIN_01 for TIMERPWM6 GT_PWM06
     //
     MAP_PinTypeTimer(PIN_01, PIN_MODE_3);
-
-    //
-    // Configure PIN_02 for TIMERPWM7 GT_PWM07
-    //
-    //MAP_PinTypeTimer(PIN_02, PIN_MODE_3);
 
 
     /**************************************************************/
 
     //
-    // Configure PIN_58 for driving LED strip
+    // Configure PIN_4 for driving LED strip
     //
     MAP_PinTypeGPIO(PIN_04, PIN_MODE_0, false);
     MAP_GPIODirModeSet(GPIOA1_BASE, 0x20, GPIO_DIR_MODE_OUT);
+
+    //
+    // Configure PIN_58 for Boost Driver Enable
+    //
+    MAP_PinTypeGPIO(PIN_58, PIN_MODE_0, false);
+    MAP_GPIODirModeSet(GPIOA0_BASE, 0x8, GPIO_DIR_MODE_OUT);
 
 	//
 	// Configure PIN_08/GPIO17 for wake up pin
@@ -101,16 +97,25 @@ PinMuxConfig(void)
 	//
 	// Configure PIN_50 for Contact Input
 	//
-	PinTypeGPIO(PIN_50, PIN_MODE_0, false);
-	GPIODirModeSet(GPIOA0_BASE, 0x1, GPIO_DIR_MODE_IN);
+	MAP_PinTypeGPIO(PIN_50, PIN_MODE_0, false);
+	MAP_GPIODirModeSet(GPIOA0_BASE, 0x1, GPIO_DIR_MODE_IN);
+	MAP_PinConfigSet(PIN_50, PIN_STRENGTH_6MA, PIN_TYPE_STD_PD);
+
+	//
+	// Configure PIN_53 for Setting Other Side of Switch to 1
+	//
+	MAP_PinTypeGPIO(PIN_53, PIN_MODE_0, false);
+	MAP_GPIODirModeSet(GPIOA3_BASE, 0x40, GPIO_DIR_MODE_OUT);
 
     //
-    // Configure PIN_55 for UART0 UART0_TX
+    // Configure PIN_06 for Motor In 2
     //
-    //MAP_PinTypeUART(PIN_55, PIN_MODE_3);
+    PinTypeGPIO(PIN_06, PIN_MODE_0, false);
+    GPIODirModeSet(GPIOA1_BASE, 0x80, GPIO_DIR_MODE_OUT);
 
     //
-    // Configure PIN_57 for UART0 UART0_RX
+    // Configure PIN_07 for Motor In 1
     //
-    //MAP_PinTypeUART(PIN_57, PIN_MODE_3);
+    PinTypeGPIO(PIN_07, PIN_MODE_0, false);
+    GPIODirModeSet(GPIOA2_BASE, 0x1, GPIO_DIR_MODE_OUT);
 }

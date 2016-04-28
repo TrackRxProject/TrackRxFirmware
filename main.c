@@ -120,12 +120,12 @@ void notify()
 	int level;
 	for (level = 150; level < 256; level++)
 	{
-		//updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
+		updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
 		showColor_led(255, level, 0);
     }
     for (level = 255; level >= 150; level--)
     {
-    	//updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
+    	updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, level);
     	showColor_led(255, level, 0);
     }
 }
@@ -152,14 +152,21 @@ void registerBottle()
 
 void dispense()
 {
+	// Set up interrupt for switch
 	GPIOIntTypeSet(GPIOA0_BASE,GPIO_PIN_0,GPIO_RISING_EDGE); // GPIO_10
 	GPIOIntRegister(GPIOA0_BASE,gpioISR);
 	GPIOIntClear(GPIOA0_BASE,GPIO_PIN_0);
-	//TODO: Turn on motor
-	//TODO: Delay
+
+	// Set Motor In 2 HIGH to turn on motor
+	GPIOPinWrite(GPIOA1_BASE, 0x80 ,0x80);
+	UtilsDelay(80000);
 	GPIOIntEnable(GPIOA0_BASE, GPIO_PIN_0);
-	//while(!stopMotor);
-	//stopMotor = 0;
+	while(!stopMotor);
+	UtilsDelay(575000);
+
+	// Turn off motor
+	GPIOPinWrite(GPIOA1_BASE, 0x80,0x00);
+	stopMotor = 0;
 }
 
 void toASCII(unsigned char * adherence)
@@ -180,15 +187,17 @@ void giveDose(unsigned char missingDose)
 	unsigned char length;
 	if (!missingDose)
 	{
+		notify_http();
+		sl_Stop(0xFF);
 		enablePWMModules_pwm();
-		startWait_timer(1000);
+		startWait_timer(10);
 		while(wait) { notify();}
 		clearNotification_led();
 		stopNotify_pwm();
 		disablePWMModules_pwm();
-		int authorized = !stopMotor; //checkAuthorization_http();
+		int authorized = checkAuthorization_http();
 		if(authorized)
-			openBottle_pwm();
+			dispense();
 		else {
 			sl_Start(NULL,NULL,NULL);
 			missingDose = 1;
@@ -215,10 +224,8 @@ void giveDose(unsigned char missingDose)
 				ret = writeMissingDose_flash(&missingDose);
 				sl_Stop(0xFF);
 			}
-			stopMotor = 0; //TODO DELETE ME
 			sleepUntilNextDose();
 		}
-		stopMotor = 0; //TODO DELETE ME
 		sl_Start(NULL,NULL,NULL);
 		//if there was a missing dose pending but the dose was
 		//just dispensed, clear the pending missing dose
@@ -250,10 +257,11 @@ void giveDose(unsigned char missingDose)
 			}
 		}
 	} else {
+		showColor_led(0,0,255);
 		int authorization = checkAuthorization_http();
 		if (!authorization)
 			return; //Returning to main function will result in hibernation
-		showColor_led(0,0,255);
+		dispense();
 		// clear the missing flag before logging dose and hibernating
 		sl_Start(NULL,NULL,NULL);
 		unsigned char missingFlag = 0;
@@ -291,6 +299,13 @@ void prescribeStateMachine()
 
 void sleepUntilNextDose()
 {
+	// Turn off motors just in case..
+	// Set Motor In 1 to 0 to begin
+	GPIOPinWrite(GPIOA2_BASE, 0x01, 0x00);
+	// Set Motor In 2 to 0 to begin
+	GPIOPinWrite(GPIOA1_BASE, 0x80,0x00);
+
+
 	float hours;
 	hours =getInterval_http();
 	//readInterval_flash returns a fixed floating point number
@@ -312,6 +327,12 @@ void sleepUntilNextDose()
 
 void sleepUntilNextDoseTicks(unsigned long long ticks)
 {
+	// Turn off motors just in case..
+	// Set Motor In 1 to 0 to begin
+	GPIOPinWrite(GPIOA2_BASE, 0x01, 0x00);
+	// Set Motor In 2 to 0 to begin
+	GPIOPinWrite(GPIOA1_BASE, 0x80,0x00);
+
 	// Zero out the slow counter
 	PRCMHIBRegWrite(HIB3P3_BASE + 0x0000001C, 0);
 	PRCMHIBRegWrite(HIB3P3_BASE + 0x00000020, 0);
@@ -332,9 +353,31 @@ int main()
 	int gpioWakeup;
 	gpioWakeup = (alarm > current);
 
+
 	BoardInit();
     PinMuxConfig();
-    dispense();
+    // Set other side of switch to HIGH
+	GPIOPinWrite(GPIOA3_BASE, 0x40,0x40);
+	// Enable Boost
+	GPIOPinWrite(GPIOA0_BASE, 0x8,0x8);
+	// Set Motor In 1 to 0 to begin
+	GPIOPinWrite(GPIOA2_BASE, 0x01, 0x00);
+	// Set Motor In 2 to 0 to begin
+	GPIOPinWrite(GPIOA1_BASE, 0x80,0x00);
+
+
+    //SmartConfigConnect_http();
+    //getInterval_http();
+
+    /*enablePWMModules_pwm();
+    startWait_timer(1000);
+    while(wait) { notify();}
+    clearNotification_led();
+    stopNotify_pwm();
+    disablePWMModules_pwm();
+    GPIOPinWrite(GPIOA0_BASE, 0x8,0x8);
+    GPIOPinWrite(GPIOA2_BASE, 0x01, 0x00);
+    dispense(); */
 
     sl_Start(NULL,NULL,NULL);
     unsigned char registered_bottle = 0;
@@ -350,8 +393,11 @@ int main()
     	sl_Stop(NULL);
     	if(missingDoseFlag)
     		giveDose(missingDoseFlag);
-    	else
-    		prescribeStateMachine();
+    	else {
+    		int reset = checkPharmacyReset_http();
+    		if(reset)
+    			prescribeStateMachine();
+    	}
     } else if(!registered_bottle)
     {
     	showColor_led(0, 255, 0);

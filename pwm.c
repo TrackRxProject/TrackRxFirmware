@@ -108,9 +108,4 @@ void stopNotify_pwm()
 	updateDutyCycle_pwm(TIMERA3_BASE, TIMER_A, 0);
 }
 
-void openBottle_pwm()
-{
-	/*TODO: Implement me */
-}
-
 /*****************************************************************************/

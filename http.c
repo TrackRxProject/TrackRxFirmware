@@ -1403,19 +1403,20 @@ void notify_http()
 int checkAuthorization_http()
 {
 	long ret;
-	int attempts = 0;
     HTTPCli_Struct httpClient;
     InitializeAppVariables();
     ret = ConnectToAP();
     ret = ConnectToHTTPServer(&httpClient);
-    int authorization = 1;//getAuthorizationFromHTTP(&httpClient);
-    if(!authorization)
+    int authorization = getAuthorizationFromHTTP(&httpClient);
+    if(authorization != 1)
     {
-    	startWait_timer(10000);
-    	while(wait && !authorization)
+    	startWait_timer(10); //wait
+    	while(wait && authorization != 1)
         {
-        	authorization = 1;//getResetFromHTTP(&httpClient);
-        	UtilsDelay(800000);
+    		HTTPCli_disconnect(&httpClient);
+    		ConnectToHTTPServer(&httpClient);
+        	authorization = getAuthorizationFromHTTP(&httpClient);
+        	UtilsDelay(160000000);
         }
     }
     HTTPCli_disconnect(&httpClient);
@@ -1430,14 +1431,16 @@ int checkPharmacyReset_http()
     InitializeAppVariables();
     ret = ConnectToAP();
     ret = ConnectToHTTPServer(&httpClient);
-    int reset = 1;//getResetFromHTTP(&httpClient);
+    int reset = getResetFromHTTP(&httpClient);
     if(!reset)
     {
-    	startWait_timer(10000);
+    	startWait_timer(120);
     	while(wait && !reset)
         {
-        	reset = 1;//getResetFromHTTP(&httpClient);
-        	UtilsDelay(800000);
+    		HTTPCli_disconnect(&httpClient);
+    		ConnectToHTTPServer(&httpClient);
+        	reset = getResetFromHTTP(&httpClient);
+        	UtilsDelay(16000000);
         }
     }
     HTTPCli_disconnect(&httpClient);
